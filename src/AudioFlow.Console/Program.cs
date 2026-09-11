@@ -28,6 +28,8 @@ internal static class Program
                 "rules" => Commands.Rules(),
                 "plan" => Commands.Plan(),
                 "apply" => Commands.Apply(),
+                "verify" => Commands.Verify(rest),
+                "route-pid" => Commands.RoutePid(rest),
                 "set-default" => Commands.SetDefault(rest),
                 "set-rule" => Commands.SetRule(rest),
                 "remove-rule" => Commands.RemoveRule(rest),

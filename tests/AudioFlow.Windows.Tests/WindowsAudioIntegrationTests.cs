@@ -119,3 +119,47 @@ public class ApplicationIdentityIntegrationTests
         Assert.False(string.IsNullOrWhiteSpace(identity.Key));
     }
 }
+
+public class AudioOutputVerifierIntegrationTests
+{
+    private readonly ITestOutputHelper _output;
+
+    public AudioOutputVerifierIntegrationTests(ITestOutputHelper output) => _output = output;
+
+    [WindowsFact]
+    public void MeasureAllPeaks_ReturnsActiveEndpointsWithLevels()
+    {
+        using var verifier = new AudioOutputVerifier();
+
+        var peaks = verifier.MeasureAllPeaks(TimeSpan.FromMilliseconds(400));
+
+        _output.WriteLine($"Measured {peaks.Count} endpoint(s).");
+        foreach (var peak in peaks)
+        {
+            _output.WriteLine($"- {peak.DeviceName}: peak={peak.Peak:0.0000}");
+            Assert.InRange(peak.Peak, 0f, 1f);
+        }
+    }
+
+    [WindowsFact]
+    public void Verify_OnExistingEndpoint_ReturnsConsistentResult()
+    {
+        using var devices = new AudioDeviceManager();
+        var active = devices.GetOutputDevices(includeInactive: false);
+        if (active.Count == 0)
+        {
+            _output.WriteLine("No active render endpoint.");
+            return;
+        }
+
+        using var verifier = new AudioOutputVerifier();
+        var result = verifier.Verify(active[0].Id, TimeSpan.FromMilliseconds(400));
+
+        _output.WriteLine(
+            $"Expected={result.ExpectedDeviceName} peak={result.ExpectedPeak:0.0000} " +
+            $"verified={result.Verified}");
+
+        Assert.Equal(active[0].Id, result.ExpectedDeviceId);
+    }
+}
+
