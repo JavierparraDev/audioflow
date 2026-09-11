@@ -1,0 +1,90 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+
+jobs:
+  build-and-unit-test:
+    name: Build + unit tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore AudioFlow.sln
+
+      - name: Build
+        run: dotnet build AudioFlow.sln -c Release --no-restore
+
+      - name: Unit tests
+        run: >
+          dotnet test tests/AudioFlow.Tests/AudioFlow.Tests.csproj
+          -c Release --no-build
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory TestResults
+
+      - name: Windows integration tests (skipped on Linux)
+        run: >
+          dotnet test tests/AudioFlow.Windows.Tests/AudioFlow.Windows.Tests.csproj
+          -c Release --no-build
+          --logger "trx;LogFileName=windows-tests-linux.trx"
+          --results-directory TestResults
+        continue-on-error: false
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-linux
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+
+  windows-integration-test:
+    name: Windows integration tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore AudioFlow.sln
+
+      - name: Build
+        run: dotnet build AudioFlow.sln -c Release --no-restore
+
+      - name: Unit tests
+        run: >
+          dotnet test tests/AudioFlow.Tests/AudioFlow.Tests.csproj
+          -c Release --no-build
+
+      - name: Windows audio integration tests
+        run: >
+          dotnet test tests/AudioFlow.Windows.Tests/AudioFlow.Windows.Tests.csproj
+          -c Release --no-build
+          --logger "trx;LogFileName=windows-tests.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-windows
+          path: TestResults/*.trx
+          if-no-files-found: ignore
