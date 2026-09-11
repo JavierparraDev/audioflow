@@ -38,7 +38,13 @@ public sealed class AudioSessionInfo
     /// <summary>From ISimpleAudioVolume::GetMute.</summary>
     public bool IsMuted { get; set; }
 
+    /// <summary>From IAudioMeterInformation::GetPeakValue (0.0 - 1.0). Used to detect audible output.</summary>
+    public float PeakValue { get; set; }
+
     public bool IsSystemSoundsSession { get; set; }
+
+    /// <summary>True when the session is active and producing audible output.</summary>
+    public bool IsAudible => State == AudioSessionStateKind.Active && PeakValue > 0.0001f;
 
     /// <summary>Last time this session was observed by AudioFlow.</summary>
     public DateTimeOffset LastSeen { get; set; } = DateTimeOffset.Now;

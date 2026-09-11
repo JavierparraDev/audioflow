@@ -22,6 +22,8 @@ internal static class Program
             return command switch
             {
                 "devices" => Commands.Devices(),
+                "sessions" => Commands.Sessions(),
+                "monitor" => Commands.Monitor(),
                 "help" or "--help" or "-h" => Commands.Help(),
                 _ => Unknown(command)
             };

@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
+    <ProjectReference Include="..\AudioFlow.Applications\AudioFlow.Applications.csproj" />
   </ItemGroup>
 
 </Project>
