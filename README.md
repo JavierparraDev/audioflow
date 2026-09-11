@@ -35,9 +35,14 @@ Desarrollo por fases. Este repositorio se construye de forma incremental:
 ## Compilar y ejecutar
 
 ```powershell
-# Windows
+# Compilar todo
 dotnet build AudioFlow.sln -c Release
-dotnet run --project src/AudioFlow.Console -c Release
+
+# Interfaz gráfica (WPF)
+dotnet run --project src/AudioFlow.UI -c Release
+
+# CLI (dispositivos, sesiones, reglas, routing)
+dotnet run --project src/AudioFlow.Console -c Release -- devices
 ```
 
 En Linux/macOS solo se puede **compilar** (con `EnableWindowsTargeting`), no ejecutar:
@@ -45,6 +50,19 @@ En Linux/macOS solo se puede **compilar** (con `EnableWindowsTargeting`), no eje
 ```bash
 dotnet build AudioFlow.sln -c Release
 ```
+
+## Uso rápido
+
+1. Abre la interfaz: verás **Parlantes** y **Audífonos**.
+2. Elige el dispositivo de audífonos (destino por defecto).
+3. Pulsa **+ Parlantes** en las apps que deban sonar por los parlantes (p. ej. Spotify).
+4. Activa **Audio Lock** para que ninguna otra app pueda usar los parlantes.
+5. Pulsa **Iniciar** para aplicar las reglas automáticamente.
+
+> **Nota sobre el routing (MVP):** AudioFlow usa la interfaz interna
+> `IAudioPolicyConfigFactory` que emplea Ajustes de Windows. El cambio se aplica
+> cuando la aplicación **reinicia su stream de audio**; no mueve audio en vivo.
+> La Fase 5B añadirá Process Loopback (API oficial) para re-enrutado en vivo.
 
 ## Arquitectura
 
