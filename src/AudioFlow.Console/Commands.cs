@@ -133,6 +133,9 @@ internal static class Commands
         Console.WriteLine("  Process ID:");
         Console.WriteLine($"  {session.ProcessId}");
         Console.WriteLine();
+        Console.WriteLine("  Application ID:");
+        Console.WriteLine($"  {session.ApplicationKey ?? "Unknown"}");
+        Console.WriteLine();
         Console.WriteLine("  Session State:");
         Console.WriteLine($"  {session.State}");
         Console.WriteLine();

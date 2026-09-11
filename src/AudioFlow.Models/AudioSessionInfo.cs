@@ -21,6 +21,15 @@ public sealed class AudioSessionInfo
     /// <summary>Resolved via ProcessManager. Optional.</summary>
     public string? ProcessPath { get; set; }
 
+    /// <summary>Stable application key used by routing rules, e.g. "exe:spotify.exe".</summary>
+    public string? ApplicationKey { get; set; }
+
+    /// <summary>Application User Model ID for packaged apps, when available.</summary>
+    public string? Aumid { get; set; }
+
+    /// <summary>Friendly application name for the UI.</summary>
+    public string? ApplicationName { get; set; }
+
     /// <summary>From IAudioSessionControl::GetDisplayName. Often empty.</summary>
     public string? DisplayName { get; set; }
 

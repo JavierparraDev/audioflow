@@ -22,12 +22,16 @@ public sealed class AudioSessionManager : IDisposable
 {
     private readonly MMDeviceEnumerator _enumerator;
     private readonly ProcessManager _processManager;
+    private readonly ApplicationIdentifier _identifier;
     private bool _disposed;
 
-    public AudioSessionManager(ProcessManager? processManager = null)
+    public AudioSessionManager(
+        ProcessManager? processManager = null,
+        ApplicationIdentifier? identifier = null)
     {
         _enumerator = new MMDeviceEnumerator();
         _processManager = processManager ?? new ProcessManager();
+        _identifier = identifier ?? new ApplicationIdentifier(_processManager);
     }
 
     /// <summary>
@@ -56,7 +60,7 @@ public sealed class AudioSessionManager : IDisposable
 
             using (device)
             {
-                ReadDeviceSessions(device, _processManager, result, includeInactive);
+                ReadDeviceSessions(device, _processManager, _identifier, result, includeInactive);
             }
         }
 
@@ -66,6 +70,7 @@ public sealed class AudioSessionManager : IDisposable
     internal static void ReadDeviceSessions(
         MMDevice device,
         ProcessManager processManager,
+        ApplicationIdentifier identifier,
         List<AudioSessionInfo> into,
         bool includeInactive)
     {
@@ -116,7 +121,7 @@ public sealed class AudioSessionManager : IDisposable
             try
             {
                 control = sessions[i];
-                var info = Map(control, deviceId, deviceName, processManager);
+                var info = Map(control, deviceId, deviceName, processManager, identifier);
 
                 if (!includeInactive && info.State != AudioSessionStateKind.Active)
                 {
@@ -140,10 +145,12 @@ public sealed class AudioSessionManager : IDisposable
         AudioSessionControl control,
         string deviceId,
         string deviceName,
-        ProcessManager processManager)
+        ProcessManager processManager,
+        ApplicationIdentifier identifier)
     {
         var processId = TryUInt(() => control.GetProcessID);
         var details = processManager.Resolve(processId);
+        var identity = identifier.Identify(details);
 
         var volume = 0f;
         var muted = false;
@@ -182,6 +189,9 @@ public sealed class AudioSessionManager : IDisposable
             ProcessId = processId,
             ProcessName = details.ProcessName,
             ProcessPath = details.ExecutablePath,
+            ApplicationKey = identity.Key,
+            Aumid = identity.Aumid,
+            ApplicationName = identity.DisplayName,
             DisplayName = TryString(() => control.DisplayName),
             DeviceId = deviceId,
             DeviceName = deviceName,
