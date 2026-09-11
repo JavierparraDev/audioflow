@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>AudioFlow.Rules</RootNamespace>
+    <AssemblyName>AudioFlow.Rules</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
+  </ItemGroup>
+
+</Project>

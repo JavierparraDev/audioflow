@@ -16,6 +16,7 @@ internal static class Program
         }
 
         var command = args.Length > 0 ? args[0].Trim().ToLowerInvariant() : "devices";
+        var rest = args.Length > 1 ? args[1..] : Array.Empty<string>();
 
         try
         {
@@ -24,6 +25,13 @@ internal static class Program
                 "devices" => Commands.Devices(),
                 "sessions" => Commands.Sessions(),
                 "monitor" => Commands.Monitor(),
+                "rules" => Commands.Rules(),
+                "plan" => Commands.Plan(),
+                "set-default" => Commands.SetDefault(rest),
+                "set-rule" => Commands.SetRule(rest),
+                "remove-rule" => Commands.RemoveRule(rest),
+                "lock" => Commands.Lock(rest),
+                "unlock" => Commands.Unlock(),
                 "help" or "--help" or "-h" => Commands.Help(),
                 _ => Unknown(command)
             };

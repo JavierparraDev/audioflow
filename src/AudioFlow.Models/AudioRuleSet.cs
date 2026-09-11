@@ -17,6 +17,9 @@ public sealed class AudioRuleSet
     /// <summary>Device protected by Audio Lock (typically the speakers).</summary>
     public string? AudioLockDeviceId { get; set; }
 
+    /// <summary>Device that blocked applications are redirected to (typically the headphones).</summary>
+    public string? AudioLockFallbackDeviceId { get; set; }
+
     /// <summary>Applications explicitly allowed to use the locked device.</summary>
     public List<string> AudioLockAllowedApplications { get; set; } = new();
 }
