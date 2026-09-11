@@ -45,7 +45,8 @@ internal sealed class DeviceNotificationClient : IMMNotificationClient
 
     public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key)
     {
-        // Property changes are noisy; only forward them as a generic refresh.
-        _owner.RaiseDevicesChanged($"property:{pwstrDeviceId}");
+        // Property changes are extremely noisy (icon, name, format...). They are
+        // intentionally NOT forwarded, otherwise the session monitor would wake
+        // up and re-enumerate on every minor change. R5 (audit).
     }
 }

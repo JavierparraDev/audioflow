@@ -207,7 +207,7 @@ internal static class Commands
         foreach (var session in list)
         {
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
-            var resolution = engine.Resolve(key);
+            var resolution = engine.Resolve(key, session.ApplicationPathHash);
             var marker = resolution.HasExplicitRule ? "RULE" : "DEFAULT";
             if (resolution.BlockedByAudioLock)
             {
@@ -253,7 +253,7 @@ internal static class Commands
         foreach (var session in list)
         {
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
-            var resolution = engine.Resolve(key);
+            var resolution = engine.Resolve(key, session.ApplicationPathHash);
 
             if (string.IsNullOrWhiteSpace(resolution.OutputDeviceId))
             {

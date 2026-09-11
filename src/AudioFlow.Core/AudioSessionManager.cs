@@ -190,6 +190,7 @@ public sealed class AudioSessionManager : IDisposable
             ProcessName = details.ProcessName,
             ProcessPath = details.ExecutablePath,
             ApplicationKey = identity.Key,
+            ApplicationPathHash = identity.PathHash,
             Aumid = identity.Aumid,
             ApplicationName = identity.DisplayName,
             DisplayName = TryString(() => control.DisplayName),

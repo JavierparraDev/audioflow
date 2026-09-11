@@ -26,8 +26,33 @@ public sealed class DetectedAppItem : ObservableObject
 {
     public required string Key { get; init; }
     public required string Name { get; init; }
-    public string? ProcessName { get; init; }
-    public string? DeviceName { get; init; }
+    public string? PathHash { get; init; }
+
+    private string? _processName;
+    public string? ProcessName
+    {
+        get => _processName;
+        set
+        {
+            if (SetProperty(ref _processName, value))
+            {
+                OnPropertyChanged(nameof(Subtitle));
+            }
+        }
+    }
+
+    private string? _deviceName;
+    public string? DeviceName
+    {
+        get => _deviceName;
+        set
+        {
+            if (SetProperty(ref _deviceName, value))
+            {
+                OnPropertyChanged(nameof(Subtitle));
+            }
+        }
+    }
 
     private bool _isOnSpeakers;
     public bool IsOnSpeakers
@@ -45,4 +70,5 @@ public sealed class SpeakerAppItem : ObservableObject
 {
     public required string Key { get; init; }
     public required string Name { get; init; }
+    public string? PathHash { get; init; }
 }

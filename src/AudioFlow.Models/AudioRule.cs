@@ -16,5 +16,11 @@ public sealed class AudioRule
     /// <summary>Endpoint ID of the target output device.</summary>
     public string OutputDeviceId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional SHA-256 prefix of the executable path. When present it is used
+    /// as a secondary match to disambiguate applications that share a file name.
+    /// </summary>
+    public string? PathHash { get; set; }
+
     public bool Enabled { get; set; } = true;
 }

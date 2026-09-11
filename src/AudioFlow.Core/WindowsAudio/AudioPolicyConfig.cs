@@ -42,6 +42,10 @@ internal static class AudioPolicyConfig
     private const int ERoleConsole = 0;
     private const int ERoleMultimedia = 1;
 
+    private static readonly object FactoryLock = new();
+    private static IntPtr _cachedFactory = IntPtr.Zero;
+    private static bool _factoryUnavailable;
+
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int SetPersistedDefaultAudioEndpointDelegate(
         IntPtr self, uint processId, int flow, int role, IntPtr deviceId);
@@ -69,7 +73,7 @@ internal static class AudioPolicyConfig
             return false;
         }
 
-        var factory = CreateFactory(out error);
+        var factory = GetFactory(out error);
         if (factory == IntPtr.Zero)
         {
             return false;
@@ -112,8 +116,6 @@ internal static class AudioPolicyConfig
             {
                 WindowsDeleteString(deviceHString);
             }
-
-            Marshal.Release(factory);
         }
     }
 
@@ -131,7 +133,7 @@ internal static class AudioPolicyConfig
             return null;
         }
 
-        var factory = CreateFactory(out error);
+        var factory = GetFactory(out error);
         if (factory == IntPtr.Zero)
         {
             return null;
@@ -168,9 +170,40 @@ internal static class AudioPolicyConfig
             error = $"{ex.GetType().Name}: {ex.Message}";
             return null;
         }
-        finally
+    }
+
+    /// <summary>
+    /// Returns the cached activation factory. The factory is free-threaded and
+    /// lives for the process lifetime; this avoids re-activating WinRT on every
+    /// routing call (R10). Access is serialized because routing can be invoked
+    /// from the UI thread and from the session monitor.
+    /// </summary>
+    private static IntPtr GetFactory(out string? error)
+    {
+        error = null;
+
+        lock (FactoryLock)
         {
-            Marshal.Release(factory);
+            if (_cachedFactory != IntPtr.Zero)
+            {
+                return _cachedFactory;
+            }
+
+            if (_factoryUnavailable)
+            {
+                error = "AudioPolicyConfig factory is not available on this system.";
+                return IntPtr.Zero;
+            }
+
+            var factory = CreateFactory(out error);
+            if (factory == IntPtr.Zero)
+            {
+                _factoryUnavailable = true;
+                return IntPtr.Zero;
+            }
+
+            _cachedFactory = factory;
+            return _cachedFactory;
         }
     }
 

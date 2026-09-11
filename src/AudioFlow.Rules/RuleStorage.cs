@@ -76,7 +76,22 @@ public sealed class RuleStorage
             }
 
             var json = JsonSerializer.Serialize(ruleSet, Options);
-            File.WriteAllText(FilePath, json);
+
+            // Atomic-ish save (R8): write to a temp file, then replace the real
+            // file. A crash mid-write cannot corrupt the existing rules.
+            var tempPath = FilePath + ".tmp";
+            File.WriteAllText(tempPath, json);
+
+            if (File.Exists(FilePath))
+            {
+                var backupPath = FilePath + ".bak";
+                File.Replace(tempPath, FilePath, backupPath, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(tempPath, FilePath);
+            }
+
             return true;
         }
         catch (Exception ex)

@@ -182,6 +182,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         var devices = _deviceManager.GetOutputDevices(includeInactive: false);
 
+        var previousSpeakersId = _speakersDevice?.Id;
+        var previousHeadphonesId = _headphonesDevice?.Id;
+
         _suppressSideEffects = true;
         try
         {
@@ -192,19 +195,39 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             var defaultDevice = devices.FirstOrDefault(d => d.IsDefault) ?? devices.FirstOrDefault();
-            var speakers = devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "speaker", "parlante", "altavoz"))
-                           ?? defaultDevice;
-            var headphones = devices.FirstOrDefault(d =>
-                                 ContainsAny(d.FriendlyName, "headphone", "audífono", "audifono", "headset"))
-                             ?? devices.FirstOrDefault(d => d.Id != speakers?.Id);
 
-            SpeakersDevice = speakers is null ? null : FindOption(speakers.Id);
-            HeadphonesDevice = headphones is null ? null : FindOption(headphones.Id);
+            // R1: keep the user's manual choice when the device is still present.
+            SpeakersDevice = ChooseDevice(previousSpeakersId, devices, preferSpeakers: true, defaultDevice, excludeId: null);
+            HeadphonesDevice = ChooseDevice(previousHeadphonesId, devices, preferSpeakers: false, defaultDevice, excludeId: SpeakersDevice?.Id);
         }
         finally
         {
             _suppressSideEffects = false;
         }
+    }
+
+    private DeviceOption? ChooseDevice(
+        string? previousId,
+        IReadOnlyList<AudioDevice> devices,
+        bool preferSpeakers,
+        AudioDevice? defaultDevice,
+        string? excludeId)
+    {
+        if (!string.IsNullOrWhiteSpace(previousId))
+        {
+            var kept = FindOption(previousId);
+            if (kept is not null)
+            {
+                return kept;
+            }
+        }
+
+        var candidate = preferSpeakers
+            ? devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "speaker", "parlante", "altavoz")) ?? defaultDevice
+            : devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "headphone", "audífono", "audifono", "headset"))
+              ?? devices.FirstOrDefault(d => !string.Equals(d.Id, excludeId, StringComparison.OrdinalIgnoreCase));
+
+        return candidate is null ? null : FindOption(candidate.Id);
     }
 
     private DeviceOption? FindOption(string id) =>
@@ -223,7 +246,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SpeakerApps.Clear();
             foreach (var rule in _ruleEngine.Rules.Rules)
             {
-                SpeakerApps.Add(new SpeakerAppItem { Key = rule.ApplicationIdentifier, Name = rule.ApplicationName });
+                SpeakerApps.Add(new SpeakerAppItem
+                {
+                    Key = rule.ApplicationIdentifier,
+                    Name = rule.ApplicationName,
+                    PathHash = rule.PathHash
+                });
             }
 
             _audioLockEnabled = _ruleEngine.Rules.AudioLockEnabled;
@@ -246,7 +274,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             foreach (var app in SpeakerApps)
             {
-                _ruleEngine.SetRule(app.Key, app.Name, SpeakersDevice.Id);
+                _ruleEngine.SetRule(app.Key, app.Name, SpeakersDevice.Id, app.PathHash);
             }
         }
 
@@ -280,10 +308,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (SpeakerApps.All(a => !string.Equals(a.Key, app.Key, StringComparison.OrdinalIgnoreCase)))
         {
-            SpeakerApps.Add(new SpeakerAppItem { Key = app.Key, Name = app.Name });
+            SpeakerApps.Add(new SpeakerAppItem { Key = app.Key, Name = app.Name, PathHash = app.PathHash });
         }
 
-        _ruleEngine.SetRule(app.Key, app.Name, SpeakersDevice.Id);
+        _ruleEngine.SetRule(app.Key, app.Name, SpeakersDevice.Id, app.PathHash);
         app.IsOnSpeakers = true;
 
         if (AudioLockEnabled)
@@ -372,10 +400,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 {
                     Key = key,
                     Name = session.ApplicationName ?? session.ProcessName ?? key,
+                    PathHash = session.ApplicationPathHash,
                     ProcessName = session.ProcessName,
                     DeviceName = session.DeviceName
                 };
                 DetectedApps.Add(item);
+            }
+            else
+            {
+                // R2: keep the displayed device/process fresh, never stale.
+                item.ProcessName = session.ProcessName;
+                item.DeviceName = session.DeviceName;
             }
 
             item.IsOnSpeakers = SpeakerApps.Any(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
@@ -413,10 +448,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         var applied = 0;
+        var verified = 0;
+        var unverified = 0;
         foreach (var session in sessions)
         {
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
-            var resolution = _ruleEngine.Resolve(key);
+            var resolution = _ruleEngine.Resolve(key, session.ApplicationPathHash);
             if (string.IsNullOrWhiteSpace(resolution.OutputDeviceId))
             {
                 continue;
@@ -426,12 +463,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (result.Success)
             {
                 applied++;
+                if (result.Verified)
+                {
+                    verified++;
+                }
+                else
+                {
+                    unverified++;
+                }
             }
         }
 
         if (manual)
         {
-            AddLog($"Routing aplicado a {applied} sesión(es).");
+            // R6: never report a plain success when verification was not possible.
+            AddLog(unverified == 0
+                ? $"Routing applied and verified for {verified} session(s)."
+                : $"Routing requested for {applied} session(s): {verified} verified, {unverified} not verified (app may need to restart its audio stream).");
         }
     }
 
@@ -447,11 +495,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
-            var resolution = _ruleEngine.Resolve(key);
+            var resolution = _ruleEngine.Resolve(key, session.ApplicationPathHash);
             if (!string.IsNullOrWhiteSpace(resolution.OutputDeviceId))
             {
-                _routingManager.Apply(session.ProcessId, key, resolution.OutputDeviceId);
-                AddLog($"Nueva sesión enrutada: {session.ProcessName} -> {resolution.Reason}");
+                var result = _routingManager.Apply(session.ProcessId, key, resolution.OutputDeviceId);
+                var verdict = result.Verified ? "verified" : "requested (not verified yet)";
+                AddLog($"New session routed: {session.ProcessName} -> {resolution.Reason} [{verdict}]");
             }
         });
     }
