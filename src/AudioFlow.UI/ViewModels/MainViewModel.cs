@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -6,6 +7,7 @@ using AudioFlow.Core;
 using AudioFlow.Core.Logging;
 using AudioFlow.Models;
 using AudioFlow.Rules;
+using AudioFlow.UI.Localization;
 using AudioFlow.UI.ViewModels;
 
 namespace AudioFlow.UI.ViewModels;
@@ -27,23 +29,52 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _dispatcher = Dispatcher.CurrentDispatcher;
         _monitor = new AudioSessionMonitor(_deviceManager);
 
+        Languages = new ObservableCollection<LanguageOption>
+        {
+            new() { Code = "en", Label = Loc.Get("LanguageEnglish") },
+            new() { Code = "es", Label = Loc.Get("LanguageSpanish") }
+        };
+        _selectedLanguage = Languages[0];
+
         AddToSpeakersCommand = new RelayCommand(p => AddToSpeakers(p as DetectedAppItem));
         RemoveFromSpeakersCommand = new RelayCommand(p => RemoveFromSpeakers(p as SpeakerAppItem));
         StartStopCommand = new RelayCommand(_ => ToggleRouting());
         ApplyNowCommand = new RelayCommand(_ => ApplyAll(manual: true));
         RefreshCommand = new RelayCommand(_ => RefreshDevicesAndSessions());
+        OpenLogsCommand = new RelayCommand(_ => OpenLogFolder());
     }
 
     public ObservableCollection<DeviceOption> OutputDevices { get; } = new();
     public ObservableCollection<SpeakerAppItem> SpeakerApps { get; } = new();
     public ObservableCollection<DetectedAppItem> DetectedApps { get; } = new();
+    public ObservableCollection<SessionDiagnostic> Diagnostics { get; } = new();
     public ObservableCollection<string> LogLines { get; } = new();
+    public ObservableCollection<LanguageOption> Languages { get; }
 
     public ICommand AddToSpeakersCommand { get; }
     public ICommand RemoveFromSpeakersCommand { get; }
     public ICommand StartStopCommand { get; }
     public ICommand ApplyNowCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand OpenLogsCommand { get; }
+
+    private LanguageOption _selectedLanguage;
+    public LanguageOption SelectedLanguage
+    {
+        get => _selectedLanguage;
+        set
+        {
+            if (!SetProperty(ref _selectedLanguage, value) || value is null)
+            {
+                return;
+            }
+
+            Loc.SetLanguage(value.Code);
+            OnPropertyChanged(nameof(StatusText));
+            OnPropertyChanged(nameof(StartStopText));
+            OnPropertyChanged(nameof(AudioLockStateText));
+        }
+    }
 
     private DeviceOption? _speakersDevice;
     public DeviceOption? SpeakersDevice
@@ -109,7 +140,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 _ruleEngine.DisableAudioLock();
             }
 
-            AddLog(value ? "Audio Lock activado." : "Audio Lock desactivado.");
+            AddLog(Loc.Get(value ? "AudioLockEnabled" : "AudioLockDisabled"));
         }
     }
 
@@ -127,10 +158,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string StartStopText => RoutingEnabled ? "Detener" : "Iniciar";
-    public string StatusText => RoutingEnabled ? "AudioFlow en ejecución" : "AudioFlow detenido";
-    public string SpeakersDeviceName => SpeakersDevice?.Name ?? "Sin seleccionar";
-    public string HeadphonesDeviceName => HeadphonesDevice?.Name ?? "Sin seleccionar";
+    public string StartStopText => Loc.Get(RoutingEnabled ? "BtnStop" : "BtnStart");
+    public string StatusText => Loc.Get(RoutingEnabled ? "StatusRunning" : "StatusStopped");
+    public string AudioLockStateText => Loc.Get(AudioLockEnabled ? "AudioLockOn" : "AudioLockOff");
+    public string SpeakersDeviceName => SpeakersDevice?.Name ?? Loc.Get("Default");
+    public string HeadphonesDeviceName => HeadphonesDevice?.Name ?? Loc.Get("Default");
 
     public void Initialize()
     {
@@ -223,8 +255,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         var candidate = preferSpeakers
-            ? devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "speaker", "parlante", "altavoz")) ?? defaultDevice
-            : devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "headphone", "audífono", "audifono", "headset"))
+            ? devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "speaker", "parlante", "altavoz", "altavoces")) ?? defaultDevice
+            : devices.FirstOrDefault(d => ContainsAny(d.FriendlyName, "headphone", "audífono", "audifono", "auricular", "headset"))
               ?? devices.FirstOrDefault(d => !string.Equals(d.Id, excludeId, StringComparison.OrdinalIgnoreCase));
 
         return candidate is null ? null : FindOption(candidate.Id);
@@ -232,6 +264,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private DeviceOption? FindOption(string id) =>
         OutputDevices.FirstOrDefault(o => string.Equals(o.Id, id, StringComparison.OrdinalIgnoreCase));
+
+    private string DeviceNameOf(string? deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            return Loc.Get("Default");
+        }
+
+        var option = FindOption(deviceId);
+        return option?.Name ?? deviceId;
+    }
 
     private void LoadRules()
     {
@@ -288,7 +331,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (SpeakersDevice is null || HeadphonesDevice is null)
         {
-            AddLog("Audio Lock requiere un dispositivo de parlantes y uno de audífonos.");
+            AddLog(Loc.Get("AudioLockNeedsDevices"));
             return;
         }
 
@@ -302,7 +345,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (app is null || SpeakersDevice is null)
         {
-            AddLog("Selecciona primero el dispositivo de parlantes.");
+            AddLog(Loc.Get("SelectSpeakersFirst"));
             return;
         }
 
@@ -319,7 +362,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             UpdateAudioLock();
         }
 
-        AddLog($"Regla añadida: {app.Name} -> {SpeakersDevice.Name}");
+        AddLog(Loc.Format("RuleAdded", app.Name, SpeakersDevice.Name));
         ApplyAll(manual: false);
     }
 
@@ -348,7 +391,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             UpdateAudioLock();
         }
 
-        AddLog($"Regla eliminada: {app.Name} (ahora va a audífonos)");
+        AddLog(Loc.Format("RuleRemoved", app.Name));
     }
 
     private void ToggleRouting()
@@ -356,12 +399,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (RoutingEnabled)
         {
             RoutingEnabled = false;
-            AddLog("Routing detenido.");
+            AddLog(Loc.Get("RoutingStopped"));
             return;
         }
 
         RoutingEnabled = true;
-        AddLog("Routing iniciado.");
+        AddLog(Loc.Get("RoutingStarted"));
         ApplyAll(manual: false);
     }
 
@@ -370,7 +413,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshDevices();
         PersistSelection();
         RefreshSessions();
-        AddLog("Dispositivos y sesiones actualizados.");
+        AddLog(Loc.Get("DevicesRefreshed"));
     }
 
     private void RefreshSessions()
@@ -414,6 +457,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             item.IsOnSpeakers = SpeakerApps.Any(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
+
+            var resolution = _ruleEngine.Resolve(key, session.ApplicationPathHash);
+            item.TargetDeviceName = DeviceNameOf(resolution.OutputDeviceId);
+            item.RuleLabel = Loc.Get(resolution.HasExplicitRule ? "RoutingExplicit" : "RoutingDefault");
         }
 
         for (var i = DetectedApps.Count - 1; i >= 0; i--)
@@ -423,6 +470,50 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 DetectedApps.RemoveAt(i);
             }
         }
+
+        RebuildDiagnostics(sessions);
+    }
+
+    private void RebuildDiagnostics(IReadOnlyList<AudioSessionInfo> sessions)
+    {
+        Diagnostics.Clear();
+        foreach (var session in sessions)
+        {
+            var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
+            var resolution = _ruleEngine.Resolve(key, session.ApplicationPathHash);
+            var onTarget = !string.IsNullOrWhiteSpace(resolution.OutputDeviceId) &&
+                           string.Equals(session.DeviceId, resolution.OutputDeviceId, StringComparison.OrdinalIgnoreCase);
+
+            Diagnostics.Add(new SessionDiagnostic
+            {
+                Process = session.ProcessName ?? "?",
+                Pid = session.ProcessId,
+                Aumid = session.Aumid,
+                SessionId = session.SessionInstanceIdentifier ?? session.SessionIdentifier,
+                Endpoint = session.DeviceId,
+                Device = session.DeviceName,
+                State = session.State.ToString(),
+                Volume = $"{(int)Math.Round(session.Volume * 100)}%",
+                Peak = session.PeakValue.ToString("0.000"),
+                Routing = resolution.HasExplicitRule ? Loc.Get("RoutingExplicit") : Loc.Get("RoutingDefault"),
+                Verified = onTarget ? Loc.Get("RoutingVerified") : Loc.Get("RoutingUnverified")
+            });
+        }
+    }
+
+    private void OpenLogFolder()
+    {
+        try
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AudioFlow", "logs");
+            Directory.CreateDirectory(dir);
+            Process.Start(new ProcessStartInfo { FileName = dir, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Could not open the log folder");
+        }
     }
 
     private void ApplyAll(bool manual)
@@ -431,7 +522,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (manual)
             {
-                AddLog("Selecciona un dispositivo de parlantes y uno de audífonos.");
+                AddLog(Loc.Get("SelectDevices"));
             }
             return;
         }
@@ -478,8 +569,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             // R6: never report a plain success when verification was not possible.
             AddLog(unverified == 0
-                ? $"Routing applied and verified for {verified} session(s)."
-                : $"Routing requested for {applied} session(s): {verified} verified, {unverified} not verified (app may need to restart its audio stream).");
+                ? Loc.Format("RoutingApplied", verified)
+                : Loc.Format("RoutingRequested", applied, verified, unverified));
         }
     }
 
@@ -500,7 +591,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 var result = _routingManager.Apply(session.ProcessId, key, resolution.OutputDeviceId);
                 var verdict = result.Verified ? "verified" : "requested (not verified yet)";
-                AddLog($"New session routed: {session.ProcessName} -> {resolution.Reason} [{verdict}]");
+                AddLog($"{session.ProcessName} -> {resolution.Reason} [{verdict}]");
             }
         });
     }
