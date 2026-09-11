@@ -21,6 +21,7 @@ internal static class Commands
         Console.WriteLine("  audioflow apply                      Apply the rules to active sessions (Phase 5)");
         Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
         Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
+        Console.WriteLine("  audioflow loopback-probe <pid>       Probe Windows Process Loopback (experimental)");
         Console.WriteLine("  audioflow set-default <device>       Set the default output device");
         Console.WriteLine("  audioflow set-rule <app> <device>    Route an application to a device");
         Console.WriteLine("  audioflow remove-rule <app>          Delete an application rule");
@@ -356,6 +357,31 @@ internal static class Commands
         }
 
         return result.Success ? 0 : 1;
+    }
+
+    public static int LoopbackProbe(string[] args)
+    {
+        if (args.Length < 1 || !uint.TryParse(args[0], out var pid))
+        {
+            Console.WriteLine("Usage: audioflow loopback-probe <pid>");
+            return 1;
+        }
+
+        Banner("PROCESS LOOPBACK (EXPERIMENTAL)");
+        Console.WriteLine($"Supported on this OS: {AudioFlow.ProcessLoopback.ProcessLoopbackProbe.IsSupported}");
+        Console.WriteLine($"Target process: {pid}");
+        Console.WriteLine();
+
+        var result = AudioFlow.ProcessLoopback.ProcessLoopbackProbe.Probe(pid);
+
+        Console.WriteLine($"supported: {result.Supported}");
+        Console.WriteLine($"activated: {result.Activated}");
+        Console.WriteLine($"message  : {result.Message}");
+        Console.WriteLine();
+        Console.WriteLine("Note: this only proves the capture interface can be activated;");
+        Console.WriteLine("re-rendering captured audio is not implemented yet (experimental).");
+        Footer();
+        return result.Activated ? 0 : 2;
     }
 
     public static int SetDefault(string[] args)

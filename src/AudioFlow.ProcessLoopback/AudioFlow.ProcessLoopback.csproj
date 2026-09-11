@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>AudioFlow.ProcessLoopback</RootNamespace>
+    <AssemblyName>AudioFlow.ProcessLoopback</AssemblyName>
+    <Description>EXPERIMENTAL: Windows Process Loopback capture (AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS). Not part of the MVP.</Description>
+  </PropertyGroup>
+
+</Project>

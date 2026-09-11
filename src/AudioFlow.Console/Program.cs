@@ -30,6 +30,7 @@ internal static class Program
                 "apply" => Commands.Apply(),
                 "verify" => Commands.Verify(rest),
                 "route-pid" => Commands.RoutePid(rest),
+                "loopback-probe" => Commands.LoopbackProbe(rest),
                 "set-default" => Commands.SetDefault(rest),
                 "set-rule" => Commands.SetRule(rest),
                 "remove-rule" => Commands.RemoveRule(rest),

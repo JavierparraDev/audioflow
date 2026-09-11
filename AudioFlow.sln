@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioFlow.Tests", "tests\Au
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioFlow.Windows.Tests", "tests\AudioFlow.Windows.Tests\AudioFlow.Windows.Tests.csproj", "{6A1655ED-F379-46BA-B235-003E0C04FED1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AudioFlow.ProcessLoopback", "src\AudioFlow.ProcessLoopback\AudioFlow.ProcessLoopback.csproj", "{9864CFF8-88CF-4149-8738-0D2692137600}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,6 +66,10 @@ Global
 		{6A1655ED-F379-46BA-B235-003E0C04FED1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A1655ED-F379-46BA-B235-003E0C04FED1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A1655ED-F379-46BA-B235-003E0C04FED1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9864CFF8-88CF-4149-8738-0D2692137600}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9864CFF8-88CF-4149-8738-0D2692137600}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9864CFF8-88CF-4149-8738-0D2692137600}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9864CFF8-88CF-4149-8738-0D2692137600}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BACCE6E2-0777-4BAA-8531-219ECEF7DF5F} = {A662653B-2C5E-4656-979F-AD892A4C9FED}
@@ -74,5 +80,6 @@ Global
 		{596931C8-ED33-41E7-A776-2D074B45BF97} = {A662653B-2C5E-4656-979F-AD892A4C9FED}
 		{7736C03F-5B55-4D6B-88EC-81FFD6C78211} = {4A45AE78-9E27-4BB4-8D24-E4489EAFB943}
 		{6A1655ED-F379-46BA-B235-003E0C04FED1} = {4A45AE78-9E27-4BB4-8D24-E4489EAFB943}
+		{9864CFF8-88CF-4149-8738-0D2692137600} = {A662653B-2C5E-4656-979F-AD892A4C9FED}
 	EndGlobalSection
 EndGlobal
