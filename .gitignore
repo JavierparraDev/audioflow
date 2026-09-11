@@ -1,0 +1,28 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+.vs/
+
+# .NET
+project.lock.json
+*.nupkg
+*.snupkg
+TestResults/
+
+# Local rules / logs produced at runtime
+rules.json
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

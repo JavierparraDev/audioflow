@@ -1,0 +1,22 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <Company>AudioFlow</Company>
+    <Product>AudioFlow</Product>
+    <Copyright>Copyright (c) 2026 Javier Parra</Copyright>
+    <Version>0.1.0</Version>
+
+    <!--
+      Allows building Windows-targeted projects (net8.0-windows, NAudio, WPF)
+      from a non-Windows host (CI / Linux) by restoring the Windows targeting
+      packs from NuGet. Runtime execution still requires Windows.
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+</Project>
