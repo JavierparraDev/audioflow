@@ -58,11 +58,25 @@ WHQL. **Descartado para el MVP.**
 
 ## Estrategia de AudioFlow
 
-1. **MVP (Fase 5A):** `IAudioPolicyConfigFactory` para asignar el endpoint
-   persistido por app. Se documenta el caveat de que la app debe reiniciar su
-   stream. Es la vía más simple hacia el comportamiento "Spotify → Parlantes".
+1. **MVP (Fase 5A) — IMPLEMENTADO:** `IAudioPolicyConfigFactory` para asignar
+   el endpoint persistido por app. Es la vía más simple hacia el comportamiento
+   "Spotify → Parlantes". Se documenta el caveat de que la app debe reiniciar su
+   stream. La escritura se verifica leyendo el valor persistido de vuelta.
 2. **Evolución (Fase 5B):** Process Loopback oficial para re-enrutado en vivo.
 3. **Futuro:** driver virtual firmado si se necesita routing perfecto.
+
+### Detalles de implementación de la Fase 5A
+
+- Activación: `RoGetActivationFactory("Windows.Media.Internal.AudioPolicyConfig")`
+  (`combase.dll`) con los IID conocidos (21H2, Downlevel, 1709).
+- Métodos invocados por índice de vtable: Set = 25, Get = 26, Clear = 27
+  (IUnknown 3 + IInspectable 3 + 19 métodos internos).
+- El `deviceId` **no** es el ID crudo del endpoint: Windows espera la ruta de
+  interfaz SWD:
+  `\\?\SWD#MMDEVAPI#{0.0.0...}.{guid}#{e6327cad-dcec-4949-ae8a-991e976a79d2}`.
+- Se escribe para los roles `eMultimedia` y `eConsole`, igual que Ajustes.
+- Resultado `E_INVALIDARG` (0x80070057) = "PROCESS_NO_AUDIO": el proceso no
+  tiene audio activo, la llamada no aplica nada. Se reporta como fallo.
 
 ## Audio Lock
 

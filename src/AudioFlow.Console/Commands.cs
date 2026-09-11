@@ -18,6 +18,7 @@ internal static class Commands
         Console.WriteLine("  audioflow monitor                    Watch sessions in real time (Phase 2A)");
         Console.WriteLine("  audioflow rules                      Show the saved rules (Phase 4)");
         Console.WriteLine("  audioflow plan                       Resolve active sessions to devices (Phase 4)");
+        Console.WriteLine("  audioflow apply                      Apply the rules to active sessions (Phase 5)");
         Console.WriteLine("  audioflow set-default <device>       Set the default output device");
         Console.WriteLine("  audioflow set-rule <app> <device>    Route an application to a device");
         Console.WriteLine("  audioflow remove-rule <app>          Delete an application rule");
@@ -221,6 +222,65 @@ internal static class Commands
 
         Footer();
         return 0;
+    }
+
+    public static int Apply()
+    {
+        using var devices = new AudioDeviceManager();
+        var engine = new RuleEngine();
+        var names = DeviceNames(devices);
+        EnsureDefaultDevice(engine, devices);
+
+        using var sessions = new AudioSessionManager();
+        var routing = new AudioRoutingManager();
+        var list = sessions.GetSessions();
+
+        Banner("APPLY ROUTING");
+        Console.WriteLine("Sets the persisted output device for each application.");
+        Console.WriteLine("Windows applies it when the app (re)starts its audio stream.");
+        Console.WriteLine();
+
+        if (list.Count == 0)
+        {
+            Console.WriteLine("No active audio sessions.");
+            Footer();
+            return 0;
+        }
+
+        var applied = 0;
+        var failed = 0;
+
+        foreach (var session in list)
+        {
+            var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
+            var resolution = engine.Resolve(key);
+
+            if (string.IsNullOrWhiteSpace(resolution.OutputDeviceId))
+            {
+                Console.WriteLine($"  [skip] {key}: no target device configured");
+                continue;
+            }
+
+            var targetName = DescribeDevice(resolution.OutputDeviceId, names);
+            var result = routing.Apply(session.ProcessId, key, resolution.OutputDeviceId);
+
+            if (result.Success)
+            {
+                applied++;
+                var verified = result.Verified ? " [verified]" : " [unverified]";
+                Console.WriteLine($"  [ok]   {key} (pid {session.ProcessId}) -> {targetName}{verified}");
+            }
+            else
+            {
+                failed++;
+                Console.WriteLine($"  [fail] {key} (pid {session.ProcessId}) -> {targetName}: {result.Error}");
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Applied: {applied}   Failed: {failed}");
+        Footer();
+        return failed == 0 ? 0 : 1;
     }
 
     public static int SetDefault(string[] args)

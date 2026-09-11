@@ -27,6 +27,7 @@ internal static class Program
                 "monitor" => Commands.Monitor(),
                 "rules" => Commands.Rules(),
                 "plan" => Commands.Plan(),
+                "apply" => Commands.Apply(),
                 "set-default" => Commands.SetDefault(rest),
                 "set-rule" => Commands.SetRule(rest),
                 "remove-rule" => Commands.RemoveRule(rest),
