@@ -27,6 +27,8 @@ internal static class Commands
         Console.WriteLine("  audioflow session                    Show the AudioFlow session state (ACTIVE/INACTIVE/STALE)");
         Console.WriteLine("  audioflow restore                    Restore Windows audio changed by AudioFlow");
         Console.WriteLine("  audioflow diagnostics                Session/guardian/devices/routes status");
+        Console.WriteLine("  audioflow routing                    Routing backends and virtual endpoint status");
+        Console.WriteLine("  audioflow routing-test <src> <tgt> <s>  Verify endpoint-loopback capture -> render");
         Console.WriteLine("  audioflow guardian status            Guardian process status");
         Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
         Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
@@ -733,6 +735,18 @@ internal static class Commands
         Console.WriteLine($"Session : {sessionState}");
         Console.WriteLine($"Guardian: {(IsGuardianRunning() ? "RUNNING" : "NOT RUNNING")}");
 
+        using (var registry = AudioFlow.Routing.RoutingBackendRegistry.CreateDefault())
+        {
+            var preferred = registry.SelectPreferred();
+            Console.WriteLine($"Backend : {preferred?.Info.Name ?? "none"} ({preferred?.Info.Status ?? "N/A"})");
+        }
+
+        using (var virtualDevices = new AudioFlow.Routing.VirtualAudioDeviceManager())
+        {
+            var virtualEndpoint = virtualDevices.GetVirtualRenderEndpoint();
+            Console.WriteLine($"Virtual : {(virtualEndpoint is null ? "NOT AVAILABLE" : virtualEndpoint.FriendlyName)}");
+        }
+
         using var devices = new AudioDeviceManager();
         var active = devices.GetOutputDevices(includeInactive: false);
         Console.WriteLine($"Devices : {active.Count} connected");
@@ -769,6 +783,164 @@ internal static class Commands
 
     private static bool IsGuardianRunning() =>
         Process.GetProcessesByName("AudioFlow.SessionGuardian").Length > 0;
+
+    public static int Routing()
+    {
+        Banner("ROUTING BACKEND");
+
+        using var registry = AudioFlow.Routing.RoutingBackendRegistry.CreateDefault();
+        using var virtualDevices = new AudioFlow.Routing.VirtualAudioDeviceManager();
+
+        Console.WriteLine("Backends:");
+        foreach (var backend in registry.Backends)
+        {
+            var info = backend.Info;
+            Console.WriteLine($"  [{info.Status}] {info.Name}");
+            if (!string.IsNullOrWhiteSpace(info.Reason))
+            {
+                Console.WriteLine($"      {info.Reason}");
+            }
+        }
+
+        var preferred = registry.SelectPreferred();
+        Console.WriteLine();
+        Console.WriteLine($"Preferred: {preferred?.Info.Name ?? "none"}");
+
+        Console.WriteLine();
+        Console.WriteLine("Virtual endpoints:");
+        var virtualEndpoints = virtualDevices.GetVirtualEndpoints();
+        if (virtualEndpoints.Count == 0)
+        {
+            Console.WriteLine("  (none detected)");
+        }
+        else
+        {
+            foreach (var endpoint in virtualEndpoints)
+            {
+                Console.WriteLine($"  {endpoint.FriendlyName}  [{endpoint.State}]  {endpoint.DeviceId}");
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Physical targets:");
+        foreach (var target in virtualDevices.GetPhysicalEndpoints())
+        {
+            var mark = target.IsAvailable ? "connected" : target.State.ToString();
+            Console.WriteLine($"  {target.FriendlyName}  ({mark})");
+        }
+
+        Footer();
+        return 0;
+    }
+
+    public static int RoutingTest(string[] args)
+    {
+        if (args.Length < 3 || !int.TryParse(args[2], out var seconds))
+        {
+            Console.WriteLine("Usage: audioflow routing-test <sourceDevice> <targetDevice> <seconds>");
+            return 1;
+        }
+
+        using var devices = new AudioDeviceManager();
+        var outputs = devices.GetOutputDevices(includeInactive: false);
+        var (sourceId, sourceName) = ResolveDeviceArg(args[0], outputs);
+        var (targetId, targetName) = ResolveDeviceArg(args[1], outputs);
+
+        if (sourceId is null || targetId is null)
+        {
+            Console.WriteLine("Source or target device not found.");
+            return 1;
+        }
+
+        Banner("ENDPOINT LOOPBACK ROUTING ENGINE TEST");
+        Console.WriteLine($"Source endpoint (captured): {sourceName}");
+        Console.WriteLine($"Target endpoint (rendered): {targetName}");
+        Console.WriteLine();
+        Console.WriteLine("NOTE: this verifies the capture -> render engine. The source endpoint");
+        Console.WriteLine("still plays physically (this is not duplication-free routing).");
+        Console.WriteLine();
+
+        using var source = new AudioFlow.Routing.EndpointLoopbackSource();
+        if (!source.Start(sourceId) || source.Format is null)
+        {
+            Console.WriteLine($"Capture start failed: {source.LastError}");
+            return 2;
+        }
+
+        using var renderer = new AudioFlow.Routing.WasapiEndpointRenderer(targetId, source.Format);
+        if (!renderer.Start())
+        {
+            Console.WriteLine($"Renderer start failed: {renderer.LastError}");
+            return 2;
+        }
+        source.DataAvailable += (_, e) => renderer.AddSamples(e.Buffer, e.Count);
+
+        var tone = args.Any(a => a.Equals("--tone", StringComparison.OrdinalIgnoreCase));
+
+        Console.WriteLine($"Source format : {source.Format}");
+        Console.WriteLine($"Mix format    : {renderer.MixFormatDescription}");
+        Console.WriteLine(tone ? "Mode          : synthetic tone (renderer isolation)" : "Mode          : endpoint loopback");
+        Console.WriteLine();
+
+        if (tone)
+        {
+            var phase = 0.0;
+            var rate = source.Format?.SampleRate ?? 48000;
+            var channels = source.Format?.Channels ?? 2;
+            var chunkFrames = rate / 100; // 10 ms
+            var deadlineTone = DateTime.UtcNow.AddSeconds(seconds);
+            while (DateTime.UtcNow < deadlineTone)
+            {
+                var bytes = new byte[chunkFrames * channels * 4];
+                for (var f = 0; f < chunkFrames; f++)
+                {
+                    var value = (float)(Math.Sin(phase) * 0.3);
+                    phase += 2 * Math.PI * 440 / rate;
+                    for (var c = 0; c < channels; c++)
+                    {
+                        BitConverter.GetBytes(value).CopyTo(bytes, (f * channels + c) * 4);
+                    }
+                }
+
+                renderer.AddSamples(bytes, bytes.Length);
+                Thread.Sleep(10);
+            }
+        }
+        else
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(seconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                Thread.Sleep(500);
+                Console.WriteLine(
+                    $"  source peak={source.Metrics.LastSourcePeak:0.0000} frames={source.Metrics.FramesCaptured} | " +
+                    $"rendered={renderer.Metrics.FramesRendered} underruns={renderer.Metrics.Underruns}");
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Verifying real audio on '{targetName}' (3s, engine still running)...");
+        using var verifier = new AudioOutputVerifier();
+        var result = verifier.Verify(targetId, TimeSpan.FromSeconds(3));
+        foreach (var peak in result.Peaks)
+        {
+            var mark = string.Equals(peak.DeviceId, targetId, StringComparison.OrdinalIgnoreCase) ? "   <== target" : string.Empty;
+            Console.WriteLine($"  {peak.Peak:0.0000}  {peak.DeviceName}{mark}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Source peak      : {source.Metrics.MaxSourcePeak:0.0000}");
+        Console.WriteLine($"Target peak      : {(result.Peaks.FirstOrDefault(p => p.DeviceId == targetId)?.Peak ?? 0f):0.0000}");
+        Console.WriteLine($"Frames captured  : {source.Metrics.FramesCaptured}");
+        Console.WriteLine($"Frames rendered  : {renderer.Metrics.FramesRendered}");
+        Console.WriteLine($"Underruns        : {renderer.Metrics.Underruns}");
+        Console.WriteLine();
+        Console.WriteLine(result.SignalOnExpected
+            ? "RESULT: target endpoint received the captured audio (engine verified)."
+            : "RESULT: target endpoint received NO audio.");
+        Footer();
+        return 0;
+    }
 
     public static int SetDefault(string[] args)
     {

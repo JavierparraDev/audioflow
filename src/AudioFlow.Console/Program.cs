@@ -40,6 +40,10 @@ internal static class Program
                     return Commands.Restore();
                 case "diagnostics":
                     return Commands.Diagnostics();
+                case "routing":
+                    return Commands.Routing();
+                case "routing-test":
+                    return Commands.RoutingTest(rest);
                 case "guardian":
                     return Commands.Guardian(rest);
                 case "verify":
