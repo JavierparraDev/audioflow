@@ -26,6 +26,7 @@ public class AudioFlowSessionTests : IDisposable
         public Dictionary<uint, string> Endpoints { get; } = new();
         public List<SessionProcessInfo> Processes { get; } = new();
         public string? DefaultDevice { get; set; } = "DEV_DEFAULT";
+        public HashSet<string> ExistingDevices { get; } = new();
         public List<(uint Pid, bool Mute)> MuteCalls { get; } = new();
         public Dictionary<uint, string> SetCalls { get; } = new();
 
@@ -44,6 +45,9 @@ public class AudioFlowSessionTests : IDisposable
         }
 
         public string? GetDefaultRenderDeviceId() => DefaultDevice;
+
+        public bool DeviceExists(string deviceId) =>
+            ExistingDevices.Count == 0 ? !string.IsNullOrWhiteSpace(deviceId) : ExistingDevices.Contains(deviceId);
 
         public IReadOnlyList<SessionProcessInfo> GetActiveProcesses() => Processes;
 
@@ -277,5 +281,95 @@ public class AudioFlowSessionTests : IDisposable
         var manager = NewManager(new FakeBackend());
 
         Assert.True(manager.HasStaleSession);
+    }
+
+    [Fact]
+    public void HandleDeviceLost_RestoresAffectedOnly_Exact()
+    {
+        var backend = new FakeBackend { DefaultDevice = "DEV_DEFAULT" };
+        backend.Endpoints[100] = "DEV_ORIGINAL";
+        backend.Endpoints[200] = "DEV_OTHER";
+        backend.Processes.Add(new SessionProcessInfo(100, Identity("exe:spotify.exe")));
+        backend.Processes.Add(new SessionProcessInfo(200, Identity("exe:discord.exe")));
+
+        var manager = NewManager(backend);
+        manager.StartSession();
+        manager.ApplyRoute(Identity("exe:spotify.exe"), 100, "DEV_SPEAKERS", out _);
+        manager.ApplyRoute(Identity("exe:discord.exe"), 200, "DEV_HEADPHONES", out _);
+
+        var report = manager.HandleDeviceLost("DEV_SPEAKERS");
+
+        Assert.Equal(1, report.AffectedCount);
+        Assert.Equal(RestoreStatus.Exact, report.Results.Single().Status);
+        Assert.Equal("DEV_ORIGINAL", backend.Endpoints[100]);
+        Assert.Equal("DEV_HEADPHONES", backend.Endpoints[200]); // untouched
+    }
+
+    [Fact]
+    public void HandleDeviceLost_OriginalGone_FallsBackToDefault()
+    {
+        var backend = new FakeBackend { DefaultDevice = "DEV_DEFAULT" };
+        backend.Endpoints[100] = "DEV_ORIGINAL";
+        backend.Processes.Add(new SessionProcessInfo(100, Identity("exe:spotify.exe")));
+
+        var manager = NewManager(backend);
+        manager.StartSession();
+        manager.ApplyRoute(Identity("exe:spotify.exe"), 100, "DEV_SPEAKERS", out _);
+
+        // The original device disappears too.
+        backend.ExistingDevices.Add("DEV_DEFAULT");
+
+        var report = manager.HandleDeviceLost("DEV_SPEAKERS");
+
+        Assert.Equal(RestoreStatus.Fallback, report.Results.Single().Status);
+        Assert.Equal("DEV_DEFAULT", backend.Endpoints[100]);
+    }
+
+    [Fact]
+    public void HandleDeviceLost_NoAffected_ReturnsEmptyReport()
+    {
+        var backend = new FakeBackend();
+        backend.Processes.Add(new SessionProcessInfo(100, Identity("exe:spotify.exe")));
+
+        var manager = NewManager(backend);
+        manager.StartSession();
+        manager.ApplyRoute(Identity("exe:spotify.exe"), 100, "DEV_SPEAKERS", out _);
+
+        var report = manager.HandleDeviceLost("DEV_OTHER");
+
+        Assert.Equal(0, report.AffectedCount);
+    }
+
+    [Fact]
+    public void RestoreApplication_OnlyTouchesNamedApp()
+    {
+        var backend = new FakeBackend();
+        backend.Endpoints[100] = "DEV_ORIGINAL_A";
+        backend.Endpoints[200] = "DEV_ORIGINAL_B";
+        backend.Processes.Add(new SessionProcessInfo(100, Identity("exe:spotify.exe")));
+        backend.Processes.Add(new SessionProcessInfo(200, Identity("exe:discord.exe")));
+
+        var manager = NewManager(backend);
+        manager.StartSession();
+        manager.ApplyRoute(Identity("exe:spotify.exe"), 100, "DEV_SPEAKERS", out _);
+        manager.ApplyRoute(Identity("exe:discord.exe"), 200, "DEV_HEADPHONES", out _);
+
+        var result = manager.RestoreApplication("exe:spotify.exe");
+
+        Assert.Equal(RestoreStatus.Exact, result.Status);
+        Assert.Equal("DEV_ORIGINAL_A", backend.Endpoints[100]);
+        Assert.Equal("DEV_HEADPHONES", backend.Endpoints[200]); // discord still routed
+    }
+
+    [Fact]
+    public void RestoreApplication_UnknownApp_IsSkipped()
+    {
+        var backend = new FakeBackend();
+        var manager = NewManager(backend);
+        manager.StartSession();
+
+        var result = manager.RestoreApplication("exe:notmodified.exe");
+
+        Assert.Equal(RestoreStatus.Skipped, result.Status);
     }
 }
