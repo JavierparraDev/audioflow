@@ -138,44 +138,20 @@ public sealed class AudioFlowSessionManager
             }
 
             _snapshot = snapshot;
-            var live = SafeGetActiveProcesses();
+            snapshot.State = "restoring";
+            _marker.Write(snapshot);
+
             var results = new List<ApplicationRestoreResult>();
+            var remaining = new List<AudioApplicationSnapshot>();
 
             foreach (var app in snapshot.Applications)
             {
-                var pid = ResolveLiveProcess(app, live);
-                if (pid is null)
+                var result = RestoreSingle(app);
+                results.Add(result);
+                if (result.Status == RestoreStatus.Failed)
                 {
-                    results.Add(new ApplicationRestoreResult(
-                        app.ApplicationIdentifier,
-                        RestoreStatus.Failed,
-                        null,
-                        "Application is not running; restoration will be retried on the next launch."));
-                    continue;
+                    remaining.Add(app);
                 }
-
-                var exact = !string.IsNullOrWhiteSpace(app.OriginalDeviceId);
-                var target = exact ? app.OriginalDeviceId : _backend.GetDefaultRenderDeviceId();
-
-                if (string.IsNullOrWhiteSpace(target))
-                {
-                    results.Add(new ApplicationRestoreResult(
-                        app.ApplicationIdentifier, RestoreStatus.Failed, null, "No restore device available."));
-                    continue;
-                }
-
-                if (!_backend.SetPersistedEndpoint(pid.Value, target, out var error))
-                {
-                    results.Add(new ApplicationRestoreResult(
-                        app.ApplicationIdentifier, RestoreStatus.Failed, target, error));
-                    continue;
-                }
-
-                results.Add(new ApplicationRestoreResult(
-                    app.ApplicationIdentifier,
-                    exact ? RestoreStatus.Exact : RestoreStatus.Fallback,
-                    target,
-                    null));
             }
 
             foreach (var pid in snapshot.MutedProcessIds)
@@ -185,7 +161,7 @@ public sealed class AudioFlowSessionManager
 
             var report = new RestoreReport(
                 snapshot.SessionId,
-                results.All(r => r.Status != RestoreStatus.Failed),
+                remaining.Count == 0,
                 results,
                 DateTimeOffset.UtcNow);
 
@@ -201,11 +177,8 @@ public sealed class AudioFlowSessionManager
             }
             else
             {
-                // Keep only the failed entries so recovery can retry them.
-                snapshot.Applications = snapshot.Applications
-                    .Where(a => results.Any(r =>
-                        r.ApplicationIdentifier == a.ApplicationIdentifier && r.Status == RestoreStatus.Failed))
-                    .ToList();
+                snapshot.State = "active";
+                snapshot.Applications = remaining;
                 snapshot.MutedProcessIds.Clear();
                 _marker.Write(snapshot);
                 State = SessionState.Stale;
@@ -213,6 +186,134 @@ public sealed class AudioFlowSessionManager
 
             return report;
         }
+    }
+
+    /// <summary>
+    /// Restores a single application (fail-safe / device-loss handling). Only the
+    /// named application is touched.
+    /// </summary>
+    public ApplicationRestoreResult RestoreApplication(string applicationIdentifier)
+    {
+        lock (_sync)
+        {
+            var snapshot = _snapshot ?? _marker.Read();
+            if (snapshot is null)
+            {
+                return new ApplicationRestoreResult(applicationIdentifier, RestoreStatus.Skipped, null, "No active session.");
+            }
+
+            _snapshot = snapshot;
+            var app = snapshot.Applications.FirstOrDefault(a =>
+                string.Equals(a.ApplicationIdentifier, applicationIdentifier, StringComparison.OrdinalIgnoreCase));
+
+            if (app is null)
+            {
+                return new ApplicationRestoreResult(applicationIdentifier, RestoreStatus.Skipped, null, "Not modified by AudioFlow.");
+            }
+
+            var result = RestoreSingle(app);
+            if (result.Status != RestoreStatus.Failed)
+            {
+                snapshot.Applications.Remove(app);
+            }
+
+            PersistOrDelete(snapshot);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Handles a lost output device: restores only the applications routed to it,
+    /// using the original device when still available, otherwise the current
+    /// Windows default (Fallback). Never touches unrelated applications.
+    /// </summary>
+    public DeviceLossReport HandleDeviceLost(string deviceId)
+    {
+        lock (_sync)
+        {
+            var snapshot = _snapshot ?? _marker.Read();
+            if (snapshot is null)
+            {
+                return DeviceLossReport.None;
+            }
+
+            _snapshot = snapshot;
+            var affected = snapshot.Applications
+                .Where(a => string.Equals(a.AudioFlowTargetDeviceId, deviceId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (affected.Count == 0)
+            {
+                return new DeviceLossReport(deviceId, Array.Empty<ApplicationRestoreResult>());
+            }
+
+            var results = new List<ApplicationRestoreResult>();
+            foreach (var app in affected)
+            {
+                var result = RestoreSingle(app);
+                results.Add(result);
+                if (result.Status != RestoreStatus.Failed)
+                {
+                    snapshot.Applications.Remove(app);
+                }
+            }
+
+            PersistOrDelete(snapshot);
+            return new DeviceLossReport(deviceId, results);
+        }
+    }
+
+    private ApplicationRestoreResult RestoreSingle(AudioApplicationSnapshot app)
+    {
+        var live = SafeGetActiveProcesses();
+        var pid = ResolveLiveProcess(app, live);
+        if (pid is null)
+        {
+            return new ApplicationRestoreResult(app.ApplicationIdentifier, RestoreStatus.Failed, null,
+                "Application is not running; restoration will be retried on the next launch.");
+        }
+
+        string? target;
+        RestoreStatus status;
+
+        if (!string.IsNullOrWhiteSpace(app.OriginalDeviceId) && _backend.DeviceExists(app.OriginalDeviceId))
+        {
+            target = app.OriginalDeviceId;
+            status = RestoreStatus.Exact;
+        }
+        else
+        {
+            target = _backend.GetDefaultRenderDeviceId();
+            status = RestoreStatus.Fallback;
+        }
+
+        if (string.IsNullOrWhiteSpace(target))
+        {
+            return new ApplicationRestoreResult(app.ApplicationIdentifier, RestoreStatus.Failed, null,
+                "No restore device available.");
+        }
+
+        if (!_backend.SetPersistedEndpoint(pid.Value, target, out var error))
+        {
+            return new ApplicationRestoreResult(app.ApplicationIdentifier, RestoreStatus.Failed, target, error);
+        }
+
+        return new ApplicationRestoreResult(app.ApplicationIdentifier, status, target, null);
+    }
+
+    private void PersistOrDelete(AudioRoutingSnapshot snapshot)
+    {
+        if (snapshot.Applications.Count == 0)
+        {
+            _marker.Delete();
+            _snapshot = null;
+            State = SessionState.Inactive;
+            return;
+        }
+
+        snapshot.State = "active";
+        _marker.Write(snapshot);
+        State = SessionState.Stale;
     }
 
     public RestoreReport EndSession() => RestoreAll(deleteMarkerOnSuccess: true);

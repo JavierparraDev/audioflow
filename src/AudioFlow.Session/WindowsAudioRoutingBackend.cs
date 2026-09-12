@@ -23,6 +23,18 @@ public sealed class WindowsAudioRoutingBackend : IAudioRoutingBackend, IDisposab
 
     public string? GetDefaultRenderDeviceId() => _devices.GetDefaultOutputDevice()?.Id;
 
+    public bool DeviceExists(string deviceId)
+    {
+        try
+        {
+            return _devices.DeviceExists(deviceId);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public int SetProcessMute(uint processId, bool mute) => _sessions.SetProcessMute(processId, mute);
 
     public IReadOnlyList<SessionProcessInfo> GetActiveProcesses()

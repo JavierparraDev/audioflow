@@ -112,3 +112,13 @@ public sealed record SessionRecoveryReport(bool HadStaleSession, RestoreReport R
     public static SessionRecoveryReport None { get; } =
         new(false, RestoreReport.Empty);
 }
+
+/// <summary>Result of handling a disconnected output device.</summary>
+public sealed record DeviceLossReport(string DeviceId, IReadOnlyList<ApplicationRestoreResult> Results)
+{
+    public static DeviceLossReport None { get; } = new(string.Empty, Array.Empty<ApplicationRestoreResult>());
+
+    public int AffectedCount => Results.Count;
+    public bool AnyFallback => Results.Any(r => r.Status == RestoreStatus.Fallback);
+    public bool AnyFailed => Results.Any(r => r.Status == RestoreStatus.Failed);
+}

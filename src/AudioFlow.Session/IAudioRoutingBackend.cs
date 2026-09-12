@@ -20,6 +20,9 @@ public interface IAudioRoutingBackend
     /// <summary>Current system default render device id.</summary>
     string? GetDefaultRenderDeviceId();
 
+    /// <summary>True when the given render endpoint is currently active.</summary>
+    bool DeviceExists(string deviceId);
+
     /// <summary>Running processes that currently have an audio session.</summary>
     IReadOnlyList<SessionProcessInfo> GetActiveProcesses();
 
