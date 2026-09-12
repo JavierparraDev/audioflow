@@ -15,6 +15,8 @@
     <ProjectReference Include="..\AudioFlow.Applications\AudioFlow.Applications.csproj" />
     <ProjectReference Include="..\AudioFlow.Rules\AudioFlow.Rules.csproj" />
     <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
+    <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
+    <ProjectReference Include="..\AudioFlow.Updates\AudioFlow.Updates.csproj" />
   </ItemGroup>
 
 </Project>

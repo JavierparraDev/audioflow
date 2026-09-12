@@ -1,6 +1,8 @@
+using AudioFlow.Configuration;
 using AudioFlow.Core;
 using AudioFlow.Models;
 using AudioFlow.Rules;
+using AudioFlow.Updates;
 
 namespace AudioFlow.ConsoleApp;
 
@@ -22,6 +24,8 @@ internal static class Commands
         Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
         Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
         Console.WriteLine("  audioflow loopback-probe <pid>       Probe Windows Process Loopback (experimental)");
+        Console.WriteLine("  audioflow version                    Show the application version");
+        Console.WriteLine("  audioflow update [--check]           Check GitHub Releases for updates");
         Console.WriteLine("  audioflow set-default <device>       Set the default output device");
         Console.WriteLine("  audioflow set-rule <app> <device>    Route an application to a device");
         Console.WriteLine("  audioflow remove-rule <app>          Delete an application rule");
@@ -383,6 +387,60 @@ internal static class Commands
         Footer();
         return result.Activated ? 0 : 2;
     }
+
+    public static int Version()
+    {
+        Console.WriteLine($"AudioFlow {AudioFlowVersion.Current}");
+        return 0;
+    }
+
+    public static async Task<int> Update(string[] args)
+    {
+        var checkOnly = args.Any(a => a.Equals("--check", StringComparison.OrdinalIgnoreCase));
+
+        using var source = new GitHubReleaseSource();
+        using var service = new UpdateService(
+            source,
+            AppVersion.Parse(AudioFlowVersion.Current),
+            UpdateChannel.Stable);
+
+        Console.WriteLine($"Current version: {service.Current}");
+
+        var result = await service.CheckAsync(force: true);
+
+        if (result.Latest is not null)
+        {
+            Console.WriteLine($"Latest version: {result.Latest}");
+        }
+
+        Console.WriteLine($"Status: {DescribeUpdateStatus(result.Status)}");
+        Console.WriteLine(result.Message);
+
+        if (checkOnly)
+        {
+            return 0;
+        }
+
+        if (result.UpdateAvailable && result.Release is not null)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Open the release page to download the update:");
+            Console.WriteLine($"  {result.Release.HtmlUrl}");
+            Console.WriteLine();
+            Console.WriteLine("Or use the AudioFlow UI (Settings > Updates) to update automatically.");
+        }
+
+        return 0;
+    }
+
+    private static string DescribeUpdateStatus(UpdateStatus status) => status switch
+    {
+        UpdateStatus.UpToDate => "Up to date",
+        UpdateStatus.UpdateAvailable => "Update available",
+        UpdateStatus.NoReleaseFound => "No release published yet",
+        UpdateStatus.Failed => "Unable to check for updates",
+        _ => "Unknown"
+    };
 
     public static int SetDefault(string[] args)
     {

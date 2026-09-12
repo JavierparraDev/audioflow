@@ -4,7 +4,7 @@ namespace AudioFlow.ConsoleApp;
 
 internal static class Program
 {
-    private static int Main(string[] args)
+    private static async Task<int> Main(string[] args)
     {
         try
         {
@@ -20,25 +20,45 @@ internal static class Program
 
         try
         {
-            return command switch
+            switch (command)
             {
-                "devices" => Commands.Devices(),
-                "sessions" => Commands.Sessions(),
-                "monitor" => Commands.Monitor(),
-                "rules" => Commands.Rules(),
-                "plan" => Commands.Plan(),
-                "apply" => Commands.Apply(),
-                "verify" => Commands.Verify(rest),
-                "route-pid" => Commands.RoutePid(rest),
-                "loopback-probe" => Commands.LoopbackProbe(rest),
-                "set-default" => Commands.SetDefault(rest),
-                "set-rule" => Commands.SetRule(rest),
-                "remove-rule" => Commands.RemoveRule(rest),
-                "lock" => Commands.Lock(rest),
-                "unlock" => Commands.Unlock(),
-                "help" or "--help" or "-h" => Commands.Help(),
-                _ => Unknown(command)
-            };
+                case "devices":
+                    return Commands.Devices();
+                case "sessions":
+                    return Commands.Sessions();
+                case "monitor":
+                    return Commands.Monitor();
+                case "rules":
+                    return Commands.Rules();
+                case "plan":
+                    return Commands.Plan();
+                case "apply":
+                    return Commands.Apply();
+                case "verify":
+                    return Commands.Verify(rest);
+                case "route-pid":
+                    return Commands.RoutePid(rest);
+                case "loopback-probe":
+                    return Commands.LoopbackProbe(rest);
+                case "set-default":
+                    return Commands.SetDefault(rest);
+                case "set-rule":
+                    return Commands.SetRule(rest);
+                case "remove-rule":
+                    return Commands.RemoveRule(rest);
+                case "lock":
+                    return Commands.Lock(rest);
+                case "unlock":
+                    return Commands.Unlock();
+                case "version":
+                    return Commands.Version();
+                case "update":
+                    return await Commands.Update(rest);
+                case "help" or "--help" or "-h":
+                    return Commands.Help();
+                default:
+                    return Unknown(command);
+            }
         }
         catch (Exception ex)
         {

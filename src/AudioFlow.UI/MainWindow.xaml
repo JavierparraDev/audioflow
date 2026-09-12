@@ -582,10 +582,61 @@
 
                         <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="{loc:Tr Language}" Style="{StaticResource SectionTitle}" />
-                                <ComboBox Width="240" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                <TextBlock Text="{loc:Tr SettingsGeneral}" Style="{StaticResource SectionTitle}" />
+                                <TextBlock Text="{loc:Tr Language}" Style="{StaticResource Muted}" Margin="0,12,0,0" />
+                                <ComboBox Width="240" HorizontalAlignment="Left" Margin="0,6,0,0"
                                           ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}"
                                           DisplayMemberPath="Label" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr SettingsStartup}" Style="{StaticResource SectionTitle}" />
+                                <CheckBox Content="{loc:Tr StartWithWindows}" IsChecked="{Binding StartWithWindows}" Margin="0,12,0,0" />
+                                <CheckBox Content="{loc:Tr CheckForUpdatesOnStartup}" IsChecked="{Binding CheckForUpdatesEnabled}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Tr SettingsUpdates}" Style="{StaticResource SectionTitle}" />
+                                <Grid Margin="0,12,0,0">
+                                    <TextBlock Text="{loc:Tr UpdateCurrentVersionLabel}" Style="{StaticResource Muted}" />
+                                    <TextBlock Text="{Binding UpdateCurrentVersion}" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Grid Margin="0,6,0,0">
+                                    <TextBlock Text="{loc:Tr UpdateLatestVersionLabel}" Style="{StaticResource Muted}" />
+                                    <TextBlock Text="{Binding UpdateLatestVersion}" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Grid Margin="0,6,0,0">
+                                    <TextBlock Text="{loc:Tr UpdateStatusLabel}" Style="{StaticResource Muted}" />
+                                    <TextBlock Text="{Binding UpdateStatusText}" HorizontalAlignment="Right" />
+                                </Grid>
+                                <Grid Margin="0,6,0,0">
+                                    <TextBlock Text="{loc:Tr UpdateLastCheckedLabel}" Style="{StaticResource Muted}" />
+                                    <TextBlock Text="{Binding LastChecked}" HorizontalAlignment="Right" />
+                                </Grid>
+                                <TextBlock Text="{Binding UpdateMessage}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button Content="{loc:Tr BtnCheckForUpdates}" Command="{Binding CheckForUpdatesCommand}"
+                                            Style="{StaticResource GhostButton}" Margin="0,0,8,0" />
+                                    <Button Content="{loc:Tr BtnUpdateNow}" Command="{Binding UpdateNowCommand}" Margin="0,0,8,0">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsUpdateAvailable}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="{loc:Tr BtnOpenReleases}" Command="{Binding OpenReleasesCommand}"
+                                            Style="{StaticResource GhostButton}" />
+                                </StackPanel>
+                                <TextBlock Text="{loc:Tr UpdatesNote}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,14,0,0" />
                             </StackPanel>
                         </Border>
 
@@ -595,7 +646,7 @@
                                 <TextBlock Text="{loc:Tr AboutText}" Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap" />
                                 <Grid Margin="0,12,0,0">
                                     <TextBlock Text="{loc:Tr Version}" Style="{StaticResource Muted}" />
-                                    <TextBlock Text="0.1.0" HorizontalAlignment="Right" />
+                                    <TextBlock Text="{Binding AppVersionText}" HorizontalAlignment="Right" />
                                 </Grid>
                                 <Grid Margin="0,6,0,0">
                                     <TextBlock Text="{loc:Tr License}" Style="{StaticResource Muted}" />

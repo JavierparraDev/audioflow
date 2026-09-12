@@ -106,4 +106,31 @@
   <data name="Default" xml:space="preserve"><value>Default</value></data>
   <data name="On" xml:space="preserve"><value>On</value></data>
   <data name="Off" xml:space="preserve"><value>Off</value></data>
+  <data name="SettingsGeneral" xml:space="preserve"><value>General</value></data>
+  <data name="SettingsStartup" xml:space="preserve"><value>Startup</value></data>
+  <data name="SettingsUpdates" xml:space="preserve"><value>Updates</value></data>
+  <data name="StartWithWindows" xml:space="preserve"><value>Start AudioFlow with Windows</value></data>
+  <data name="CheckForUpdatesOnStartup" xml:space="preserve"><value>Check for updates on startup</value></data>
+  <data name="BtnCheckForUpdates" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="BtnUpdateNow" xml:space="preserve"><value>Update now</value></data>
+  <data name="BtnOpenReleases" xml:space="preserve"><value>Release notes</value></data>
+  <data name="UpdateCurrentVersionLabel" xml:space="preserve"><value>Current version</value></data>
+  <data name="UpdateLatestVersionLabel" xml:space="preserve"><value>Latest version</value></data>
+  <data name="UpdateStatusLabel" xml:space="preserve"><value>Status</value></data>
+  <data name="UpdateLastCheckedLabel" xml:space="preserve"><value>Last checked</value></data>
+  <data name="UpdateChecking" xml:space="preserve"><value>Checking for updates...</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Up to date</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>Update available</value></data>
+  <data name="UpdateNoRelease" xml:space="preserve"><value>No release published yet</value></data>
+  <data name="UpdateUnable" xml:space="preserve"><value>Unable to check for updates</value></data>
+  <data name="UpdateUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="UpdateUpToDateMessage" xml:space="preserve"><value>You are up to date.</value></data>
+  <data name="UpdateAvailableMessage" xml:space="preserve"><value>Version {0} is available.</value></data>
+  <data name="UpdateNoReleaseMessage" xml:space="preserve"><value>There is no published release to compare against.</value></data>
+  <data name="UpdateUnableMessage" xml:space="preserve"><value>GitHub could not be reached. AudioFlow keeps working normally.</value></data>
+  <data name="UpdateDownloading" xml:space="preserve"><value>Downloading update...</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Update failed</value></data>
+  <data name="UpdateNoInstaller" xml:space="preserve"><value>No installer asset found in the release.</value></data>
+  <data name="UpdateNoUpdater" xml:space="preserve"><value>Updater not found next to the application.</value></data>
+  <data name="UpdatesNote" xml:space="preserve"><value>AudioFlow only contacts GitHub to check for updates. It never sends audio, application, device or personal information.</value></data>
 </root>
