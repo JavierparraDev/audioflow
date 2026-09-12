@@ -49,6 +49,16 @@
 - [ ] Virtual audio endpoint integration (Phase 5).
 - [ ] Real live routing (Phase 6).
 
+## Reliability (Phase 4.5)
+
+- [x] Device disconnect recovery (affected-only, exact/fallback).
+- [x] Pipeline failure fail-safe (explicit Failed state; restore on end).
+- [x] Independent Session Guardian (restores within seconds of a crash).
+- [x] Clean-shutdown/guardian race prevention (marker + idempotency).
+- [x] `audioflow diagnostics` and `audioflow guardian status`.
+- [ ] Physical device-disconnect test.
+- [ ] Windows logoff/restart/shutdown physical test.
+
 ## Next
 
 - [ ] **Live routing via Process Loopback**: capture a process and re-render to

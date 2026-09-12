@@ -82,6 +82,18 @@ audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
 Ver [docs/SESSION-RULES.md](docs/SESSION-RULES.md) y
 [docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
 
+Un **Session Guardian** independiente (`AudioFlow.SessionGuardian.exe`) vigila
+AudioFlow mientras se ejecuta y restaura el audio de Windows en segundos si
+AudioFlow se cae, sin esperar a reiniciar. Las desconexiones de dispositivo se
+manejan restaurando solo las aplicaciones afectadas. Ver
+[docs/SESSION-GUARDIAN.md](docs/SESSION-GUARDIAN.md) y
+[docs/DEVICE-RECOVERY.md](docs/DEVICE-RECOVERY.md).
+
+```powershell
+audioflow diagnostics   # sesión / guardian / dispositivos / rutas
+audioflow guardian status
+```
+
 ## Uso
 
 1. Ejecuta `publish/ui/AudioFlow.exe`.

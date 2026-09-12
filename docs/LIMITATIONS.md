@@ -106,3 +106,17 @@ or on the next launch after a crash. Limitations:
   never by PID alone.
 - Only applications AudioFlow recorded are ever restored; unrelated apps are
   never touched.
+
+## 11. Reliability and the session guardian
+
+- **Device disconnect** handling is implemented and unit-tested (affected-only
+  restore, exact/fallback), but a physical unplug test was **not executed**.
+- The **Session Guardian** restores Windows audio within seconds of a crash
+  (verified), but it is a separate process: if the guardian itself is killed
+  before restoring, recovery falls back to the next AudioFlow launch.
+- **Windows logoff/restart/shutdown** restore is wired via
+  `Application.SessionEnding` but was **not physically executed**.
+- **Pipeline failure** stops the affected pipeline and the session restores on
+  end, but the fail-safe was not triggered physically.
+- The guardian restores only applications in the session snapshot; it never
+  touches unrelated audio settings.
