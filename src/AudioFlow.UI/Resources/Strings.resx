@@ -152,4 +152,7 @@
   <data name="TrayStopRouting" xml:space="preserve"><value>Stop Routing</value></data>
   <data name="TrayDiagnostics" xml:space="preserve"><value>Diagnostics</value></data>
   <data name="TrayExit" xml:space="preserve"><value>Exit AudioFlow</value></data>
+  <data name="GuardianRunning" xml:space="preserve"><value>Active</value></data>
+  <data name="GuardianNotRunning" xml:space="preserve"><value>Not running</value></data>
+  <data name="RecoveryLabel" xml:space="preserve"><value>Recovery</value></data>
 </root>

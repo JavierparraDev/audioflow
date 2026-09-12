@@ -37,6 +37,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _suppressSideEffects;
     private bool _initialized;
     private bool _disposed;
+    private Process? _guardianProcess;
 
     public MainViewModel()
     {
@@ -91,6 +92,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public string RoutingModeText => Loc.Get("RoutingModeTemporary");
     public string SafetyText => Loc.Get("SafetyHint");
+
+    public string GuardianStatusText =>
+        _guardianProcess is { HasExited: false } ? Loc.Get("GuardianRunning") : Loc.Get("GuardianNotRunning");
 
     private bool _closeCompletely;
     public bool CloseCompletely
@@ -346,6 +350,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _monitor.SessionStarted += OnSessionStarted;
         _monitor.SessionEnded += OnSessionEnded;
         _monitor.SessionsChanged += OnSessionsChanged;
+        _deviceManager.DevicesChanged += OnDevicesChanged;
         _monitor.Start();
 
         RefreshSessions();
@@ -629,7 +634,76 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RoutingEnabled = true;
         OnPropertyChanged(nameof(SessionStateText));
         AddLog(Loc.Get("RoutingStarted"));
+        LaunchGuardian();
         ApplyAll(manual: false);
+    }
+
+    private void LaunchGuardian()
+    {
+        try
+        {
+            var exe = Path.Combine(AppContext.BaseDirectory, "AudioFlow.SessionGuardian.exe");
+            if (!File.Exists(exe))
+            {
+                Log.Warn("Session guardian not found next to the application; continuing without it.");
+                OnPropertyChanged(nameof(GuardianStatusText));
+                return;
+            }
+
+            _guardianProcess = Process.Start(new ProcessStartInfo
+            {
+                FileName = exe,
+                Arguments = $"--owner-pid {Environment.ProcessId}",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+
+            Log.Info("Session guardian started.");
+            OnPropertyChanged(nameof(GuardianStatusText));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Could not start the session guardian");
+        }
+    }
+
+    private void OnDevicesChanged(object? sender, AudioDeviceChangedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Reason))
+        {
+            return;
+        }
+
+        // React to disconnects: "removed:<id>" or "state:<id>".
+        if (!e.Reason.StartsWith("removed:", StringComparison.OrdinalIgnoreCase) &&
+            !e.Reason.StartsWith("state:", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var separator = e.Reason.IndexOf(':');
+        if (separator < 0 || separator + 1 >= e.Reason.Length)
+        {
+            return;
+        }
+
+        var deviceId = e.Reason[(separator + 1)..];
+
+        _dispatcher.BeginInvoke(() =>
+        {
+            var report = _routingSession.HandleDeviceLost(deviceId);
+            if (report.AffectedCount == 0)
+            {
+                return;
+            }
+
+            foreach (var result in report.Results)
+            {
+                AddLog($"DEVICE LOST {result.ApplicationIdentifier} -> {result.Status} ({result.DeviceId})");
+            }
+
+            OnPropertyChanged(nameof(SessionStateText));
+        });
     }
 
     private void EmergencyReset()
@@ -1061,9 +1135,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _updateCts?.Cancel();
         _updateCts?.Dispose();
         _updateService?.Dispose();
+        _deviceManager.DevicesChanged -= OnDevicesChanged;
         _monitor.Dispose();
         _deviceManager.Dispose();
         _sessionManager.Dispose();
         _routingBackend.Dispose();
+
+        try
+        {
+            _guardianProcess?.Dispose();
+        }
+        catch
+        {
+            // best effort
+        }
     }
 }
