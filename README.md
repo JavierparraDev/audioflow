@@ -66,6 +66,24 @@ keeps working normally when offline.
 
 See [docs/UPDATES.md](docs/UPDATES.md).
 
+## Session & safety
+
+Routing is **session-scoped**. While AudioFlow is open, rules may be active; when
+AudioFlow closes, Windows returns to its normal audio behavior. AudioFlow
+snapshots the original state, writes an atomic recovery marker before changing
+anything, and restores on exit. If AudioFlow crashes, the next launch restores
+Windows audio **before** doing anything else and never re-activates routing
+automatically.
+
+```powershell
+audioflow session   # ACTIVE | INACTIVE | STALE
+audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
+.\tools\emergency-restore.ps1   # restore without the UI
+```
+
+See [docs/SESSION-RULES.md](docs/SESSION-RULES.md) and
+[docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
+
 ## Usage
 
 1. Run `publish/ui/AudioFlow.exe`.

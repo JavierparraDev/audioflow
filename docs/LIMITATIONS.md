@@ -88,3 +88,21 @@ render** pipeline (see [LIVE-ROUTING-REPORT.md](LIVE-ROUTING-REPORT.md)).
 - Therefore duplication-free live routing requires a **virtual audio endpoint**
   (driver or virtual cable). See
   [ARCHITECTURE-DECISION-LIVE-ROUTING.md](ARCHITECTURE-DECISION-LIVE-ROUTING.md).
+
+## 10. Session rules and restore
+
+Routing is now **session-scoped**: AudioFlow snapshots the original state, writes
+an atomic recovery marker before any change, and restores Windows audio on exit
+or on the next launch after a crash. Limitations:
+
+- The internal API has **no per-application clear**. Restore rewrites the
+  original device (or the system default); a behaviourally-neutral override entry
+  may remain for apps that had no override.
+- If an application is **not running** at restore time, its restoration is
+  deferred to the next launch or to `audioflow restore`.
+- After a crash, Windows audio stays changed **until the next AudioFlow launch**
+  or a manual `audioflow restore` / `tools/emergency-restore.ps1`.
+- Restore matches applications by AUMID / path hash / executable name / live PID,
+  never by PID alone.
+- Only applications AudioFlow recorded are ever restored; unrelated apps are
+  never touched.

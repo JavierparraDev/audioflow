@@ -65,6 +65,23 @@ app está en ejecución, y AudioFlow sigue funcionando sin conexión.
 
 Ver [docs/UPDATES.md](docs/UPDATES.md).
 
+## Sesión y seguridad
+
+El routing es **por sesión**. Mientras AudioFlow está abierto, las reglas pueden
+estar activas; al cerrarlo, Windows vuelve a su comportamiento normal. AudioFlow
+captura el estado original, escribe un marcador de recuperación atómico antes de
+cambiar nada y restaura al salir. Si AudioFlow se cae, el siguiente arranque
+restaura el audio de Windows **antes** de nada y nunca reactiva el routing solo.
+
+```powershell
+audioflow session   # ACTIVE | INACTIVE | STALE
+audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
+.\tools\emergency-restore.ps1   # restaurar sin la UI
+```
+
+Ver [docs/SESSION-RULES.md](docs/SESSION-RULES.md) y
+[docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
+
 ## Uso
 
 1. Ejecuta `publish/ui/AudioFlow.exe`.

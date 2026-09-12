@@ -36,6 +36,19 @@
 - [ ] Capture from the virtual endpoint and route to the target device.
 - [ ] Spotify/Chrome/simultaneous/disconnect physical tests.
 
+## Session safety (Phase 4)
+
+- [x] Session-scoped rules with an atomic recovery marker.
+- [x] Snapshot/restore by stable application identity (not PID alone).
+- [x] Restore statuses: Exact / Fallback / Failed.
+- [x] Crash recovery on next launch (never auto-restarts routing).
+- [x] Clean-exit restore (window, Alt+F4, tray exit, Windows shutdown).
+- [x] `audioflow session` / `audioflow restore` and `tools/emergency-restore.ps1`.
+- [x] UI session status, safety banner, Emergency Reset and tray.
+- [x] Virtual audio backend research (C -> B -> A).
+- [ ] Virtual audio endpoint integration (Phase 5).
+- [ ] Real live routing (Phase 6).
+
 ## Next
 
 - [ ] **Live routing via Process Loopback**: capture a process and re-render to
