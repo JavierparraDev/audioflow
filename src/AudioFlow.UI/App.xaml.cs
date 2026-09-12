@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 using AudioFlow.Core.Logging;
+using Application = System.Windows.Application;
 
 namespace AudioFlow.UI;
 

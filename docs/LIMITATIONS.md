@@ -73,3 +73,67 @@ interface (verified on Windows 11 build 26200). It does **not** yet:
   uninstall asks, and the default is to keep the data.
 - Portable mode stores data in `<app>\data`; do not mix a portable install with
   an installed one (different data locations).
+
+## 9. Live routing (Process Loopback) — duplication
+
+Phase 3 implemented and verified a real **Process Loopback capture → WASAPI
+render** pipeline (see [LIVE-ROUTING-REPORT.md](LIVE-ROUTING-REPORT.md)).
+
+- Capture works (per process, 265,041 frames / 6 s, peak 0.3554 measured).
+- Re-render to a chosen device works (target endpoint peak 0.2010 measured,
+  0 underruns, format negotiation 44100/16 → 48000/32).
+- **It duplicates audio**: the original output keeps playing. Suppressing it by
+  muting the session **also silences the capture** (measured peak 0.0000),
+  because the loopback tap is downstream of the per-session mute.
+- Therefore duplication-free live routing requires a **virtual audio endpoint**
+  (driver or virtual cable). See
+  [ARCHITECTURE-DECISION-LIVE-ROUTING.md](ARCHITECTURE-DECISION-LIVE-ROUTING.md).
+
+## 10. Session rules and restore
+
+Routing is now **session-scoped**: AudioFlow snapshots the original state, writes
+an atomic recovery marker before any change, and restores Windows audio on exit
+or on the next launch after a crash. Limitations:
+
+- The internal API has **no per-application clear**. Restore rewrites the
+  original device (or the system default); a behaviourally-neutral override entry
+  may remain for apps that had no override.
+- If an application is **not running** at restore time, its restoration is
+  deferred to the next launch or to `audioflow restore`.
+- After a crash, Windows audio stays changed **until the next AudioFlow launch**
+  or a manual `audioflow restore` / `tools/emergency-restore.ps1`.
+- Restore matches applications by AUMID / path hash / executable name / live PID,
+  never by PID alone.
+- Only applications AudioFlow recorded are ever restored; unrelated apps are
+  never touched.
+
+## 11. Reliability and the session guardian
+
+- **Device disconnect** handling is implemented and unit-tested (affected-only
+  restore, exact/fallback), but a physical unplug test was **not executed**.
+- The **Session Guardian** restores Windows audio within seconds of a crash
+  (verified), but it is a separate process: if the guardian itself is killed
+  before restoring, recovery falls back to the next AudioFlow launch.
+- **Windows logoff/restart/shutdown** restore is wired via
+  `Application.SessionEnding` but was **not physically executed**.
+- **Pipeline failure** stops the affected pipeline and the session restores on
+  end, but the fail-safe was not triggered physically.
+- The guardian restores only applications in the session snapshot; it never
+  touches unrelated audio settings.
+
+## 12. Real routing backend (Phase 5)
+
+- **Live, duplication-free routing is BLOCKED** without a virtual audio
+  endpoint. The application must render to a virtual endpoint (a null sink) for
+  AudioFlow to capture and re-render; no such endpoint is installed in the test
+  environment.
+- The detected "virtual" device (`NGENUITY - Chat (HyperX Virtual Audio Device)`)
+  is **not** a null sink, so using it would still duplicate.
+- The **Policy Endpoint** backend works today with no duplication but applies
+  when the application recreates its audio stream (not live).
+- Endpoint-loopback capture and the endpoint renderer are implemented; the
+  renderer is physically verified (tone → target peak 0.5968). Some physical
+  endpoints (Speaker Realtek, FxSound) do not register a meter on the test
+  machine.
+- Physical routing tests for Spotify/Chrome/simultaneous routing were **not
+  executed** (blocked).

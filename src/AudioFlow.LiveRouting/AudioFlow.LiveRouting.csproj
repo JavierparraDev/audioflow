@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>AudioFlow.LiveRouting</RootNamespace>
+    <AssemblyName>AudioFlow.LiveRouting</AssemblyName>
+    <Description>Live per-application audio routing pipeline (Process Loopback capture -> WASAPI render).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AudioFlow.Core\AudioFlow.Core.csproj" />
+    <ProjectReference Include="..\AudioFlow.ProcessLoopback\AudioFlow.ProcessLoopback.csproj" />
+    <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
+  </ItemGroup>
+
+</Project>

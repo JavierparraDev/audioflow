@@ -88,4 +88,8 @@ public sealed class AudioRoutingManager
     /// <summary>Reads back the persisted output endpoint for a process.</summary>
     public string? GetPersistedEndpoint(uint processId) =>
         AudioPolicyConfig.TryGetPersistedEndpoint(processId, out _);
+
+    /// <summary>Reads back the persisted output endpoint for a process, with error detail.</summary>
+    public string? GetPersistedEndpoint(uint processId, out string? error) =>
+        AudioPolicyConfig.TryGetPersistedEndpoint(processId, out error);
 }

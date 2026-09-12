@@ -3,6 +3,9 @@ using AudioFlow.Core;
 using AudioFlow.Models;
 using AudioFlow.Rules;
 using AudioFlow.Updates;
+using AudioFlow.Applications;
+using AudioFlow.Session;
+using System.Diagnostics;
 
 namespace AudioFlow.ConsoleApp;
 
@@ -20,10 +23,19 @@ internal static class Commands
         Console.WriteLine("  audioflow monitor                    Watch sessions in real time (Phase 2A)");
         Console.WriteLine("  audioflow rules                      Show the saved rules (Phase 4)");
         Console.WriteLine("  audioflow plan                       Resolve active sessions to devices (Phase 4)");
-        Console.WriteLine("  audioflow apply                      Apply the rules to active sessions (Phase 5)");
+        Console.WriteLine("  audioflow apply [--duration N]       Apply rules for a temporary session (restores on exit)");
+        Console.WriteLine("  audioflow session                    Show the AudioFlow session state (ACTIVE/INACTIVE/STALE)");
+        Console.WriteLine("  audioflow restore                    Restore Windows audio changed by AudioFlow");
+        Console.WriteLine("  audioflow diagnostics                Session/guardian/devices/routes status");
+        Console.WriteLine("  audioflow routing                    Routing backends and virtual endpoint status");
+        Console.WriteLine("  audioflow routing-test <src> <tgt> <s>  Verify endpoint-loopback capture -> render");
+        Console.WriteLine("  audioflow guardian status            Guardian process status");
         Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
         Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
         Console.WriteLine("  audioflow loopback-probe <pid>       Probe Windows Process Loopback (experimental)");
+        Console.WriteLine("  audioflow loopback-capture <pid> <s> Capture a process's audio and show metrics");
+        Console.WriteLine("  audioflow mute-pid <pid> <on|off>    Mute/unmute a process's audio sessions");
+        Console.WriteLine("  audioflow live-route <pid> <dev> <s> Capture a process and render it to a device");
         Console.WriteLine("  audioflow version                    Show the application version");
         Console.WriteLine("  audioflow update [--check]           Check GitHub Releases for updates");
         Console.WriteLine("  audioflow set-default <device>       Set the default output device");
@@ -231,29 +243,39 @@ internal static class Commands
         return 0;
     }
 
-    public static int Apply()
+    public static int Apply(string[] args)
     {
+        var duration = 0;
+        var durationIndex = Array.FindIndex(args, a => a.Equals("--duration", StringComparison.OrdinalIgnoreCase));
+        if (durationIndex >= 0 && durationIndex + 1 < args.Length)
+        {
+            int.TryParse(args[durationIndex + 1], out duration);
+        }
+
+        var noWait = args.Any(a => a.Equals("--no-wait", StringComparison.OrdinalIgnoreCase));
+
         using var devices = new AudioDeviceManager();
         var engine = new RuleEngine();
         var names = DeviceNames(devices);
         EnsureDefaultDevice(engine, devices);
 
-        using var sessions = new AudioSessionManager();
-        var routing = new AudioRoutingManager();
-        var list = sessions.GetSessions();
+        using var backend = new WindowsAudioRoutingBackend();
+        var sessionManager = new AudioFlowSessionManager(backend);
 
-        Banner("APPLY ROUTING");
-        Console.WriteLine("Sets the persisted output device for each application.");
-        Console.WriteLine("Windows applies it when the app (re)starts its audio stream.");
+        Banner("APPLY ROUTING (TEMPORARY SESSION)");
+        Console.WriteLine("Rules are applied for this session only.");
+        Console.WriteLine("Windows audio is restored when this command exits.");
         Console.WriteLine();
 
-        if (list.Count == 0)
+        if (!sessionManager.StartSession())
         {
-            Console.WriteLine("No active audio sessions.");
+            Console.WriteLine("Could not start a session.");
             Footer();
-            return 0;
+            return 2;
         }
 
+        using var sessions = new AudioSessionManager();
+        var list = sessions.GetSessions();
         var applied = 0;
         var failed = 0;
 
@@ -268,26 +290,126 @@ internal static class Commands
                 continue;
             }
 
-            var targetName = DescribeDevice(resolution.OutputDeviceId, names);
-            var result = routing.Apply(session.ProcessId, key, resolution.OutputDeviceId);
+            var identity = new ApplicationIdentity
+            {
+                Key = key,
+                Aumid = session.Aumid,
+                ExecutablePath = session.ProcessPath,
+                PathHash = session.ApplicationPathHash,
+                ProcessName = session.ProcessName,
+                DisplayName = session.ApplicationName
+            };
 
-            if (result.Success)
+            var targetName = DescribeDevice(resolution.OutputDeviceId, names);
+            if (sessionManager.ApplyRoute(identity, session.ProcessId, resolution.OutputDeviceId, out var error))
             {
                 applied++;
-                var verified = result.Verified ? " [verified]" : " [unverified]";
-                Console.WriteLine($"  [ok]   {key} (pid {session.ProcessId}) -> {targetName}{verified}");
+                Console.WriteLine($"  [ok]   {key} (pid {session.ProcessId}) -> {targetName}");
             }
             else
             {
                 failed++;
-                Console.WriteLine($"  [fail] {key} (pid {session.ProcessId}) -> {targetName}: {result.Error}");
+                Console.WriteLine($"  [fail] {key} (pid {session.ProcessId}) -> {targetName}: {error}");
             }
         }
 
         Console.WriteLine();
         Console.WriteLine($"Applied: {applied}   Failed: {failed}");
+
+        if (noWait)
+        {
+            Console.WriteLine("Restoring Windows audio (--no-wait)...");
+            PrintRestoreReport(sessionManager.EndSession());
+            Footer();
+            return failed == 0 ? 0 : 1;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("SESSION ACTIVE. Press Ctrl+C to stop and restore Windows audio.");
+        var stop = new ManualResetEventSlim(false);
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            stop.Set();
+        };
+
+        if (duration > 0)
+        {
+            stop.Wait(TimeSpan.FromSeconds(duration));
+        }
+        else
+        {
+            stop.Wait();
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Restoring Windows audio...");
+        var report = sessionManager.EndSession();
+        PrintRestoreReport(report);
         Footer();
-        return failed == 0 ? 0 : 1;
+        return report.Success ? 0 : 1;
+    }
+
+    public static int Session()
+    {
+        var marker = new SessionMarker();
+        var snapshot = marker.Read();
+
+        if (snapshot is null)
+        {
+            Console.WriteLine("INACTIVE");
+            Console.WriteLine("Windows audio is not being modified by AudioFlow.");
+            return 0;
+        }
+
+        var active = snapshot.OwnerProcessId != 0 && IsProcessAlive(snapshot.OwnerProcessId);
+        Console.WriteLine(active ? "ACTIVE" : "STALE");
+        Console.WriteLine($"  sessionId : {snapshot.SessionId}");
+        Console.WriteLine($"  createdAt : {snapshot.CreatedAt:u}");
+        Console.WriteLine($"  ownerPid  : {snapshot.OwnerProcessId} ({(active ? "running" : "not running")})");
+        Console.WriteLine($"  apps      : {snapshot.Applications.Count}");
+        return 0;
+    }
+
+    public static int Restore()
+    {
+        using var backend = new WindowsAudioRoutingBackend();
+        var manager = new AudioFlowSessionManager(backend);
+        var recovery = manager.RecoverIfNeeded();
+
+        if (!recovery.HadStaleSession)
+        {
+            Console.WriteLine("No AudioFlow session to restore. Windows audio is untouched.");
+            Console.WriteLine("RESTORE SUCCESS");
+            return 0;
+        }
+
+        PrintRestoreReport(recovery.Restore);
+        return recovery.Restore.Success ? 0 : 1;
+    }
+
+    private static void PrintRestoreReport(AudioFlow.Session.RestoreReport report)
+    {
+        foreach (var result in report.Results)
+        {
+            var detail = string.IsNullOrWhiteSpace(result.Reason) ? string.Empty : $" ({result.Reason})";
+            Console.WriteLine($"  [{result.Status}] {result.ApplicationIdentifier} -> {result.DeviceId ?? "-"}{detail}");
+        }
+
+        Console.WriteLine(report.Success ? "RESTORE SUCCESS" : "RESTORE FAILED");
+    }
+
+    private static bool IsProcessAlive(uint processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById((int)processId);
+            return !process.HasExited;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static int Verify(string[] args)
@@ -350,17 +472,22 @@ internal static class Commands
             return 1;
         }
 
-        var routing = new AudioRoutingManager();
-        var result = routing.Apply(pid, $"pid:{pid}", id);
+        using var backend = new WindowsAudioRoutingBackend();
+        var manager = new AudioFlowSessionManager(backend);
+        var identity = new ApplicationIdentifier().Identify(pid);
 
-        Console.WriteLine($"pid {pid} -> {name}");
-        Console.WriteLine($"success={result.Success} verified={result.Verified} status={result.Status}");
-        if (result.Error is not null)
+        Console.WriteLine($"pid {pid} -> {name} (temporary session)");
+        if (!manager.ApplyRoute(identity, pid, id, out var error))
         {
-            Console.WriteLine($"error: {result.Error}");
+            Console.WriteLine($"route failed: {error}");
+            manager.EndSession();
+            return 1;
         }
 
-        return result.Success ? 0 : 1;
+        Console.WriteLine("Route applied. Restoring immediately (diagnostic only)...");
+        var report = manager.EndSession();
+        PrintRestoreReport(report);
+        return report.Success ? 0 : 1;
     }
 
     public static int LoopbackProbe(string[] args)
@@ -441,6 +568,379 @@ internal static class Commands
         UpdateStatus.Failed => "Unable to check for updates",
         _ => "Unknown"
     };
+
+    public static int LoopbackCapture(string[] args)
+    {
+        if (args.Length < 2 || !uint.TryParse(args[0], out var pid) || !int.TryParse(args[1], out var seconds))
+        {
+            Console.WriteLine("Usage: audioflow loopback-capture <pid> <seconds>");
+            return 1;
+        }
+
+        Banner("PROCESS LOOPBACK CAPTURE");
+
+        using var capture = new AudioFlow.ProcessLoopback.ProcessLoopbackCapture();
+        if (!capture.Start(pid))
+        {
+            Console.WriteLine($"Capture start failed: {capture.LastError}");
+            Footer();
+            return 2;
+        }
+
+        Console.WriteLine($"Capturing process {pid} for {seconds}s (16-bit PCM / 44100 / stereo)...");
+        Console.WriteLine("Play audio in the target application now.");
+        Console.WriteLine();
+
+        var deadline = DateTime.UtcNow.AddSeconds(seconds);
+        while (DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(500);
+            var stats = capture.Statistics;
+            Console.WriteLine(
+                $"  peak={stats.LastPeak:0.0000}  rms={stats.LastRms:0.0000}  " +
+                $"frames={stats.TotalFrames}  packets={stats.PacketCount}  silent={stats.SilentPackets}");
+        }
+
+        capture.Stop();
+
+        var final = capture.Statistics;
+        Console.WriteLine();
+        Console.WriteLine($"Frames captured : {final.TotalFrames}");
+        Console.WriteLine($"Packets         : {final.PacketCount}");
+        Console.WriteLine($"Silent packets  : {final.SilentPackets}");
+        Console.WriteLine($"Max peak        : {final.MaxPeak:0.0000}");
+        Console.WriteLine();
+        Console.WriteLine(final.MaxPeak > 0.001f
+            ? "RESULT: AUDIO CAPTURED (peak above silence threshold)."
+            : "RESULT: SILENCE (no audio captured).");
+        Footer();
+        return 0;
+    }
+
+    public static int MutePid(string[] args)
+    {
+        if (args.Length < 2 || !uint.TryParse(args[0], out var pid))
+        {
+            Console.WriteLine("Usage: audioflow mute-pid <pid> <on|off>");
+            return 1;
+        }
+
+        var mute = args[1].Equals("on", StringComparison.OrdinalIgnoreCase)
+                   || args[1].Equals("1", StringComparison.OrdinalIgnoreCase)
+                   || args[1].Equals("true", StringComparison.OrdinalIgnoreCase);
+
+        using var sessions = new AudioSessionManager();
+        var changed = sessions.SetProcessMute(pid, mute);
+        Console.WriteLine($"pid {pid} mute={mute}: {changed} session(s) changed.");
+        return 0;
+    }
+
+    public static int LiveRoute(string[] args)
+    {
+        if (args.Length < 3 || !uint.TryParse(args[0], out var pid) || !int.TryParse(args[2], out var seconds))
+        {
+            Console.WriteLine("Usage: audioflow live-route <pid> <device> <seconds> [--mute]");
+            return 1;
+        }
+
+        using var devices = new AudioDeviceManager();
+        var (id, name) = ResolveDeviceArg(args[1], devices.GetOutputDevices());
+        if (id is null)
+        {
+            Console.WriteLine($"Device not found: {args[1]}");
+            return 1;
+        }
+
+        var muteOriginal = args.Any(a => a.Equals("--mute", StringComparison.OrdinalIgnoreCase));
+
+        Banner("LIVE ROUTE");
+        Console.WriteLine($"Process {pid} -> {name} for {seconds}s");
+        Console.WriteLine();
+
+        using var pipeline = new AudioFlow.LiveRouting.AudioPipeline($"pid:{pid}", pid, id);
+        pipeline.StateChanged += (_, state) => Console.WriteLine($"  [state] {state}");
+
+        if (!pipeline.Start())
+        {
+            Console.WriteLine($"Pipeline start failed: {pipeline.LastError}");
+            Footer();
+            return 2;
+        }
+
+        if (muteOriginal)
+        {
+            using var muter = new AudioSessionManager();
+            muter.SetProcessMute(pid, true);
+            Console.WriteLine("  original session muted (duplication suppression attempt)");
+        }
+
+        var deadline = DateTime.UtcNow.AddSeconds(seconds);
+        while (DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(500);
+            var c = pipeline.Capture;
+            var r = pipeline.Render;
+            Console.WriteLine(
+                $"  capture peak={c.LastPeak:0.0000} rms={c.LastRms:0.0000} frames={c.TotalFrames} | " +
+                $"render frames={r.FramesWritten} buffered={r.BufferedBytes}B underruns={r.Underruns}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Capture frames: {pipeline.Capture.TotalFrames}  Render frames: {pipeline.Render.FramesWritten}");
+        Console.WriteLine($"Mix format    : {pipeline.MixFormat}");
+
+        // Verify WHILE the pipeline is still running.
+        Console.WriteLine();
+        Console.WriteLine($"Verifying real audio level on '{name}' (3s, pipeline still running)...");
+        using var verifier = new AudioOutputVerifier();
+        var result = verifier.Verify(id, TimeSpan.FromSeconds(3));
+        foreach (var peak in result.Peaks)
+        {
+            var mark = string.Equals(peak.DeviceId, id, StringComparison.OrdinalIgnoreCase) ? "   <== target" : string.Empty;
+            Console.WriteLine($"  {peak.Peak:0.0000}  {peak.DeviceName}{mark}");
+        }
+
+        pipeline.Stop();
+
+        if (muteOriginal)
+        {
+            using var muter = new AudioSessionManager();
+            muter.SetProcessMute(pid, false);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(result.SignalOnExpected
+            ? "RESULT: target endpoint received audio."
+            : "RESULT: target endpoint received NO audio.");
+        Footer();
+        return 0;
+    }
+
+    public static int Diagnostics()
+    {
+        Banner("DIAGNOSTICS");
+
+        var marker = new SessionMarker();
+        var snapshot = marker.Read();
+        string sessionState;
+        if (snapshot is null)
+        {
+            sessionState = "INACTIVE";
+        }
+        else
+        {
+            sessionState = snapshot.OwnerProcessId != 0 && IsProcessAlive(snapshot.OwnerProcessId) ? "ACTIVE" : "STALE";
+        }
+
+        Console.WriteLine($"Session : {sessionState}");
+        Console.WriteLine($"Guardian: {(IsGuardianRunning() ? "RUNNING" : "NOT RUNNING")}");
+
+        using (var registry = AudioFlow.Routing.RoutingBackendRegistry.CreateDefault())
+        {
+            var preferred = registry.SelectPreferred();
+            Console.WriteLine($"Backend : {preferred?.Info.Name ?? "none"} ({preferred?.Info.Status ?? "N/A"})");
+        }
+
+        using (var virtualDevices = new AudioFlow.Routing.VirtualAudioDeviceManager())
+        {
+            var virtualEndpoint = virtualDevices.GetVirtualRenderEndpoint();
+            Console.WriteLine($"Virtual : {(virtualEndpoint is null ? "NOT AVAILABLE" : virtualEndpoint.FriendlyName)}");
+        }
+
+        using var devices = new AudioDeviceManager();
+        var active = devices.GetOutputDevices(includeInactive: false);
+        Console.WriteLine($"Devices : {active.Count} connected");
+
+        Console.WriteLine("Routes  :");
+        if (snapshot is null || snapshot.Applications.Count == 0)
+        {
+            Console.WriteLine("  (none)");
+        }
+        else
+        {
+            foreach (var app in snapshot.Applications)
+            {
+                Console.WriteLine($"  {app.ApplicationIdentifier} -> {app.AudioFlowTargetDeviceId ?? "-"} " +
+                                  $"(original: {app.OriginalDeviceId ?? "none"})");
+            }
+        }
+
+        Footer();
+        return 0;
+    }
+
+    public static int Guardian(string[] args)
+    {
+        if (args.Length == 0 || !args[0].Equals("status", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("Usage: audioflow guardian status");
+            return 1;
+        }
+
+        Console.WriteLine(IsGuardianRunning() ? "RUNNING" : "NOT RUNNING");
+        return 0;
+    }
+
+    private static bool IsGuardianRunning() =>
+        Process.GetProcessesByName("AudioFlow.SessionGuardian").Length > 0;
+
+    public static int Routing()
+    {
+        Banner("ROUTING BACKEND");
+
+        using var registry = AudioFlow.Routing.RoutingBackendRegistry.CreateDefault();
+        using var virtualDevices = new AudioFlow.Routing.VirtualAudioDeviceManager();
+
+        Console.WriteLine("Backends:");
+        foreach (var backend in registry.Backends)
+        {
+            var info = backend.Info;
+            Console.WriteLine($"  [{info.Status}] {info.Name}");
+            if (!string.IsNullOrWhiteSpace(info.Reason))
+            {
+                Console.WriteLine($"      {info.Reason}");
+            }
+        }
+
+        var preferred = registry.SelectPreferred();
+        Console.WriteLine();
+        Console.WriteLine($"Preferred: {preferred?.Info.Name ?? "none"}");
+
+        Console.WriteLine();
+        Console.WriteLine("Virtual endpoints:");
+        var virtualEndpoints = virtualDevices.GetVirtualEndpoints();
+        if (virtualEndpoints.Count == 0)
+        {
+            Console.WriteLine("  (none detected)");
+        }
+        else
+        {
+            foreach (var endpoint in virtualEndpoints)
+            {
+                Console.WriteLine($"  {endpoint.FriendlyName}  [{endpoint.State}]  {endpoint.DeviceId}");
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Physical targets:");
+        foreach (var target in virtualDevices.GetPhysicalEndpoints())
+        {
+            var mark = target.IsAvailable ? "connected" : target.State.ToString();
+            Console.WriteLine($"  {target.FriendlyName}  ({mark})");
+        }
+
+        Footer();
+        return 0;
+    }
+
+    public static int RoutingTest(string[] args)
+    {
+        if (args.Length < 3 || !int.TryParse(args[2], out var seconds))
+        {
+            Console.WriteLine("Usage: audioflow routing-test <sourceDevice> <targetDevice> <seconds>");
+            return 1;
+        }
+
+        using var devices = new AudioDeviceManager();
+        var outputs = devices.GetOutputDevices(includeInactive: false);
+        var (sourceId, sourceName) = ResolveDeviceArg(args[0], outputs);
+        var (targetId, targetName) = ResolveDeviceArg(args[1], outputs);
+
+        if (sourceId is null || targetId is null)
+        {
+            Console.WriteLine("Source or target device not found.");
+            return 1;
+        }
+
+        Banner("ENDPOINT LOOPBACK ROUTING ENGINE TEST");
+        Console.WriteLine($"Source endpoint (captured): {sourceName}");
+        Console.WriteLine($"Target endpoint (rendered): {targetName}");
+        Console.WriteLine();
+        Console.WriteLine("NOTE: this verifies the capture -> render engine. The source endpoint");
+        Console.WriteLine("still plays physically (this is not duplication-free routing).");
+        Console.WriteLine();
+
+        using var source = new AudioFlow.Routing.EndpointLoopbackSource();
+        if (!source.Start(sourceId) || source.Format is null)
+        {
+            Console.WriteLine($"Capture start failed: {source.LastError}");
+            return 2;
+        }
+
+        using var renderer = new AudioFlow.Routing.WasapiEndpointRenderer(targetId, source.Format);
+        if (!renderer.Start())
+        {
+            Console.WriteLine($"Renderer start failed: {renderer.LastError}");
+            return 2;
+        }
+        source.DataAvailable += (_, e) => renderer.AddSamples(e.Buffer, e.Count);
+
+        var tone = args.Any(a => a.Equals("--tone", StringComparison.OrdinalIgnoreCase));
+
+        Console.WriteLine($"Source format : {source.Format}");
+        Console.WriteLine($"Mix format    : {renderer.MixFormatDescription}");
+        Console.WriteLine(tone ? "Mode          : synthetic tone (renderer isolation)" : "Mode          : endpoint loopback");
+        Console.WriteLine();
+
+        if (tone)
+        {
+            var phase = 0.0;
+            var rate = source.Format?.SampleRate ?? 48000;
+            var channels = source.Format?.Channels ?? 2;
+            var chunkFrames = rate / 100; // 10 ms
+            var deadlineTone = DateTime.UtcNow.AddSeconds(seconds);
+            while (DateTime.UtcNow < deadlineTone)
+            {
+                var bytes = new byte[chunkFrames * channels * 4];
+                for (var f = 0; f < chunkFrames; f++)
+                {
+                    var value = (float)(Math.Sin(phase) * 0.3);
+                    phase += 2 * Math.PI * 440 / rate;
+                    for (var c = 0; c < channels; c++)
+                    {
+                        BitConverter.GetBytes(value).CopyTo(bytes, (f * channels + c) * 4);
+                    }
+                }
+
+                renderer.AddSamples(bytes, bytes.Length);
+                Thread.Sleep(10);
+            }
+        }
+        else
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(seconds);
+            while (DateTime.UtcNow < deadline)
+            {
+                Thread.Sleep(500);
+                Console.WriteLine(
+                    $"  source peak={source.Metrics.LastSourcePeak:0.0000} frames={source.Metrics.FramesCaptured} | " +
+                    $"rendered={renderer.Metrics.FramesRendered} underruns={renderer.Metrics.Underruns}");
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Verifying real audio on '{targetName}' (3s, engine still running)...");
+        using var verifier = new AudioOutputVerifier();
+        var result = verifier.Verify(targetId, TimeSpan.FromSeconds(3));
+        foreach (var peak in result.Peaks)
+        {
+            var mark = string.Equals(peak.DeviceId, targetId, StringComparison.OrdinalIgnoreCase) ? "   <== target" : string.Empty;
+            Console.WriteLine($"  {peak.Peak:0.0000}  {peak.DeviceName}{mark}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Source peak      : {source.Metrics.MaxSourcePeak:0.0000}");
+        Console.WriteLine($"Target peak      : {(result.Peaks.FirstOrDefault(p => p.DeviceId == targetId)?.Peak ?? 0f):0.0000}");
+        Console.WriteLine($"Frames captured  : {source.Metrics.FramesCaptured}");
+        Console.WriteLine($"Frames rendered  : {renderer.Metrics.FramesRendered}");
+        Console.WriteLine($"Underruns        : {renderer.Metrics.Underruns}");
+        Console.WriteLine();
+        Console.WriteLine(result.SignalOnExpected
+            ? "RESULT: target endpoint received the captured audio (engine verified)."
+            : "RESULT: target endpoint received NO audio.");
+        Footer();
+        return 0;
+    }
 
     public static int SetDefault(string[] args)
     {

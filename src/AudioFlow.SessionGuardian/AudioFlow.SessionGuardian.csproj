@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>AudioFlow.SessionGuardian</RootNamespace>
+    <AssemblyName>AudioFlow.SessionGuardian</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Description>Independent guardian that restores Windows audio if AudioFlow crashes.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AudioFlow.Session\AudioFlow.Session.csproj" />
+    <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
+  </ItemGroup>
+
+</Project>

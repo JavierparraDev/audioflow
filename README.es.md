@@ -65,6 +65,35 @@ app está en ejecución, y AudioFlow sigue funcionando sin conexión.
 
 Ver [docs/UPDATES.md](docs/UPDATES.md).
 
+## Sesión y seguridad
+
+El routing es **por sesión**. Mientras AudioFlow está abierto, las reglas pueden
+estar activas; al cerrarlo, Windows vuelve a su comportamiento normal. AudioFlow
+captura el estado original, escribe un marcador de recuperación atómico antes de
+cambiar nada y restaura al salir. Si AudioFlow se cae, el siguiente arranque
+restaura el audio de Windows **antes** de nada y nunca reactiva el routing solo.
+
+```powershell
+audioflow session   # ACTIVE | INACTIVE | STALE
+audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
+.\tools\emergency-restore.ps1   # restaurar sin la UI
+```
+
+Ver [docs/SESSION-RULES.md](docs/SESSION-RULES.md) y
+[docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
+
+Un **Session Guardian** independiente (`AudioFlow.SessionGuardian.exe`) vigila
+AudioFlow mientras se ejecuta y restaura el audio de Windows en segundos si
+AudioFlow se cae, sin esperar a reiniciar. Las desconexiones de dispositivo se
+manejan restaurando solo las aplicaciones afectadas. Ver
+[docs/SESSION-GUARDIAN.md](docs/SESSION-GUARDIAN.md) y
+[docs/DEVICE-RECOVERY.md](docs/DEVICE-RECOVERY.md).
+
+```powershell
+audioflow diagnostics   # sesión / guardian / dispositivos / rutas
+audioflow guardian status
+```
+
 ## Uso
 
 1. Ejecuta `publish/ui/AudioFlow.exe`.
@@ -84,7 +113,22 @@ audioflow verify "Parlantes"   # mide el nivel real de audio por endpoint
 audioflow loopback-probe <pid> # sonda experimental de process loopback
 audioflow version             # muestra la versión (p. ej. AudioFlow 0.2.0)
 audioflow update --check      # comprueba actualizaciones en GitHub Releases
+audioflow routing             # backends de routing + estado del endpoint virtual
 ```
+
+## Backends de routing
+
+AudioFlow enruta mediante una capa de backends intercambiables
+(`AudioFlow.Routing`):
+
+- **Policy Endpoint** — fija el endpoint persistido de la app. Sin duplicación;
+  aplica al reiniciar el stream. Disponible hoy.
+- **Virtual Endpoint** — captura el loopback de un endpoint virtual y lo
+  renderiza al destino. Live y sin duplicación, pero requiere un endpoint de
+  audio virtual instalado; si no, reporta `BLOCKED`.
+
+Ver [docs/ROUTING-BACKENDS.md](docs/ROUTING-BACKENDS.md) y
+[docs/VIRTUAL-ENDPOINT-INTEGRATION.md](docs/VIRTUAL-ENDPOINT-INTEGRATION.md).
 
 ## Arquitectura
 

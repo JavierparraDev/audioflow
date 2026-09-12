@@ -133,4 +133,30 @@
   <data name="UpdateNoInstaller" xml:space="preserve"><value>No installer asset found in the release.</value></data>
   <data name="UpdateNoUpdater" xml:space="preserve"><value>Updater not found next to the application.</value></data>
   <data name="UpdatesNote" xml:space="preserve"><value>AudioFlow only contacts GitHub to check for updates. It never sends audio, application, device or personal information.</value></data>
+  <data name="SessionActive" xml:space="preserve"><value>Active</value></data>
+  <data name="SessionInactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="SessionStale" xml:space="preserve"><value>Stale session</value></data>
+  <data name="SessionRecovered" xml:space="preserve"><value>Recovered</value></data>
+  <data name="SessionLabel" xml:space="preserve"><value>AudioFlow Session</value></data>
+  <data name="RoutingModeLabel" xml:space="preserve"><value>Routing Mode</value></data>
+  <data name="RoutingModeTemporary" xml:space="preserve"><value>Temporary session</value></data>
+  <data name="SafetyLabel" xml:space="preserve"><value>Session protection</value></data>
+  <data name="SafetyHint" xml:space="preserve"><value>Windows audio will return to normal when AudioFlow closes.</value></data>
+  <data name="BtnEmergencyReset" xml:space="preserve"><value>Emergency Reset</value></data>
+  <data name="EmergencyResetDone" xml:space="preserve"><value>Windows audio restored</value></data>
+  <data name="EmergencyResetIncomplete" xml:space="preserve"><value>Restore incomplete; some applications were not running</value></data>
+  <data name="RoutingAppliedTemporary" xml:space="preserve"><value>Routing applied to {0} session(s) ({1} failed). Windows audio will be restored when AudioFlow closes.</value></data>
+  <data name="SettingsSafety" xml:space="preserve"><value>Session &amp; safety</value></data>
+  <data name="CloseCompletely" xml:space="preserve"><value>Close AudioFlow completely when the window is closed (otherwise it minimizes to the tray)</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Open AudioFlow</value></data>
+  <data name="TrayStopRouting" xml:space="preserve"><value>Stop Routing</value></data>
+  <data name="TrayDiagnostics" xml:space="preserve"><value>Diagnostics</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit AudioFlow</value></data>
+  <data name="GuardianRunning" xml:space="preserve"><value>Active</value></data>
+  <data name="GuardianNotRunning" xml:space="preserve"><value>Not running</value></data>
+  <data name="RecoveryLabel" xml:space="preserve"><value>Recovery</value></data>
+  <data name="RoutingBackendLabel" xml:space="preserve"><value>Routing backend</value></data>
+  <data name="VirtualEndpointLabel" xml:space="preserve"><value>Virtual endpoint</value></data>
+  <data name="VirtualNotAvailable" xml:space="preserve"><value>Not available</value></data>
+  <data name="RoutingEngineNote" xml:space="preserve"><value>Policy routing applies on stream restart. Live, duplication-free routing requires a virtual audio endpoint.</value></data>
 </root>

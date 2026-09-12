@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>AudioFlow.Session</RootNamespace>
+    <AssemblyName>AudioFlow.Session</AssemblyName>
+    <Description>Session-scoped audio routing with snapshot, restore and crash recovery.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AudioFlow.Core\AudioFlow.Core.csproj" />
+    <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
+    <ProjectReference Include="..\AudioFlow.Applications\AudioFlow.Applications.csproj" />
+    <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>AudioFlow.UI</RootNamespace>
     <AssemblyName>AudioFlow</AssemblyName>
     <ApplicationIcon />
@@ -17,6 +18,8 @@
     <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
     <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
     <ProjectReference Include="..\AudioFlow.Updates\AudioFlow.Updates.csproj" />
+    <ProjectReference Include="..\AudioFlow.Session\AudioFlow.Session.csproj" />
+    <ProjectReference Include="..\AudioFlow.Routing\AudioFlow.Routing.csproj" />
   </ItemGroup>
 
 </Project>

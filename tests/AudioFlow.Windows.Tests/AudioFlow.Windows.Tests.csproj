@@ -17,6 +17,10 @@
     <ProjectReference Include="..\..\src\AudioFlow.Core\AudioFlow.Core.csproj" />
     <ProjectReference Include="..\..\src\AudioFlow.Applications\AudioFlow.Applications.csproj" />
     <ProjectReference Include="..\..\src\AudioFlow.Models\AudioFlow.Models.csproj" />
+    <ProjectReference Include="..\..\src\AudioFlow.ProcessLoopback\AudioFlow.ProcessLoopback.csproj" />
+    <ProjectReference Include="..\..\src\AudioFlow.LiveRouting\AudioFlow.LiveRouting.csproj" />
+    <ProjectReference Include="..\..\src\AudioFlow.Session\AudioFlow.Session.csproj" />
+    <ProjectReference Include="..\..\src\AudioFlow.Routing\AudioFlow.Routing.csproj" />
   </ItemGroup>
 
 </Project>

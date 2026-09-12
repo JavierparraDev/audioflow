@@ -9,10 +9,14 @@ using AudioFlow.Core;
 using AudioFlow.Core.Logging;
 using AudioFlow.Models;
 using AudioFlow.Rules;
+using AudioFlow.Routing;
+using AudioFlow.Session;
 using AudioFlow.UI.Localization;
 using AudioFlow.UI.Services;
 using AudioFlow.UI.ViewModels;
 using AudioFlow.Updates;
+using Application = System.Windows.Application;
+using ApplicationIdentity = AudioFlow.Models.ApplicationIdentity;
 
 namespace AudioFlow.UI.ViewModels;
 
@@ -21,7 +25,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly AudioDeviceManager _deviceManager = new();
     private readonly RuleEngine _ruleEngine = new();
     private readonly AudioSessionManager _sessionManager = new();
-    private readonly AudioRoutingManager _routingManager = new();
+    private readonly WindowsAudioRoutingBackend _routingBackend = new();
+    private readonly AudioFlowSessionManager _routingSession;
+    private readonly VirtualAudioDeviceManager _virtualDevices = new();
+    private readonly RoutingBackendRegistry _routingRegistry;
     private readonly AudioSessionMonitor _monitor;
     private readonly Dispatcher _dispatcher;
     private readonly SettingsStore _settingsStore = new();
@@ -32,11 +39,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private bool _suppressSideEffects;
     private bool _initialized;
+    private bool _disposed;
+    private Process? _guardianProcess;
 
     public MainViewModel()
     {
         _dispatcher = Dispatcher.CurrentDispatcher;
         _monitor = new AudioSessionMonitor(_deviceManager);
+        _routingSession = new AudioFlowSessionManager(_routingBackend);
+        _routingRegistry = new RoutingBackendRegistry(_deviceManager, _virtualDevices);
 
         Languages = new ObservableCollection<LanguageOption>
         {
@@ -54,6 +65,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CheckForUpdatesCommand = new RelayCommand(async _ => await CheckForUpdatesAsync(force: true));
         UpdateNowCommand = new RelayCommand(async _ => await UpdateNowAsync());
         OpenReleasesCommand = new RelayCommand(_ => OpenUrl(UpdateDefaults.RepositoryUrl + "/releases"));
+        EmergencyResetCommand = new RelayCommand(_ => EmergencyReset());
     }
 
     public ObservableCollection<DeviceOption> OutputDevices { get; } = new();
@@ -72,6 +84,41 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand CheckForUpdatesCommand { get; }
     public ICommand UpdateNowCommand { get; }
     public ICommand OpenReleasesCommand { get; }
+    public ICommand EmergencyResetCommand { get; }
+
+    public string SessionStateText => _routingSession.State switch
+    {
+        AudioFlow.Session.SessionState.Active => Loc.Get("SessionActive"),
+        AudioFlow.Session.SessionState.Stale => Loc.Get("SessionStale"),
+        AudioFlow.Session.SessionState.Recovered => Loc.Get("SessionRecovered"),
+        _ => Loc.Get("SessionInactive")
+    };
+
+    public string RoutingModeText => Loc.Get("RoutingModeTemporary");
+    public string SafetyText => Loc.Get("SafetyHint");
+
+    public string GuardianStatusText =>
+        _guardianProcess is { HasExited: false } ? Loc.Get("GuardianRunning") : Loc.Get("GuardianNotRunning");
+
+    public string BackendNameText => _routingRegistry.SelectPreferred()?.Info.Name ?? "none";
+    public string BackendStatusText => _routingRegistry.SelectPreferred()?.Info.Status ?? "N/A";
+    public string VirtualEndpointText =>
+        _virtualDevices.GetVirtualRenderEndpoint()?.FriendlyName ?? Loc.Get("VirtualNotAvailable");
+    public string RoutingEngineNote => Loc.Get("RoutingEngineNote");
+
+    private bool _closeCompletely;
+    public bool CloseCompletely
+    {
+        get => _closeCompletely;
+        set
+        {
+            if (SetProperty(ref _closeCompletely, value))
+            {
+                _settings.CloseCompletely = value;
+                SaveSettings();
+            }
+        }
+    }
 
     public string AppVersionText => AudioFlowVersion.Current;
 
@@ -291,12 +338,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         LoadSettingsAndUpdates();
 
+        // Crash recovery FIRST: restore Windows audio, never re-activate routing.
+        try
+        {
+            var recovery = new CrashRecoveryService(_routingSession).Recover();
+            if (recovery.HadStaleSession)
+            {
+                Log.Warn($"Recovered a previous unclean session: {recovery.Restore.Summary}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Crash recovery failed");
+        }
+
+        OnPropertyChanged(nameof(SessionStateText));
+
         RefreshDevices();
         LoadRules();
 
         _monitor.SessionStarted += OnSessionStarted;
         _monitor.SessionEnded += OnSessionEnded;
         _monitor.SessionsChanged += OnSessionsChanged;
+        _deviceManager.DevicesChanged += OnDevicesChanged;
         _monitor.Start();
 
         RefreshSessions();
@@ -318,6 +382,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         _checkForUpdatesEnabled = _settings.CheckForUpdates;
         OnPropertyChanged(nameof(CheckForUpdatesEnabled));
+
+        _closeCompletely = _settings.CloseCompletely;
+        OnPropertyChanged(nameof(CloseCompletely));
 
         UpdateCurrentVersion = AudioFlowVersion.Current;
         if (_settings.LastUpdateCheckUtc is { } last)
@@ -541,18 +608,132 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         AddLog(Loc.Format("RuleRemoved", app.Name));
     }
 
+    /// <summary>Stops routing and restores Windows audio (used by the tray menu).</summary>
+    public void StopRouting()
+    {
+        if (RoutingEnabled)
+        {
+            ToggleRouting();
+        }
+        else
+        {
+            _routingSession.EndSession();
+            OnPropertyChanged(nameof(SessionStateText));
+        }
+    }
+
     private void ToggleRouting()
     {
         if (RoutingEnabled)
         {
             RoutingEnabled = false;
-            AddLog(Loc.Get("RoutingStopped"));
+            var report = _routingSession.EndSession();
+            AddLog(report.Success
+                ? $"{Loc.Get("RoutingStopped")} ({report.Summary})"
+                : $"{Loc.Get("RoutingStopped")} - restore incomplete ({report.Summary})");
+            OnPropertyChanged(nameof(SessionStateText));
+            return;
+        }
+
+        if (!_routingSession.StartSession())
+        {
+            AddLog("Could not start an AudioFlow session.");
             return;
         }
 
         RoutingEnabled = true;
+        OnPropertyChanged(nameof(SessionStateText));
         AddLog(Loc.Get("RoutingStarted"));
+        LaunchGuardian();
         ApplyAll(manual: false);
+    }
+
+    private void LaunchGuardian()
+    {
+        try
+        {
+            var exe = Path.Combine(AppContext.BaseDirectory, "AudioFlow.SessionGuardian.exe");
+            if (!File.Exists(exe))
+            {
+                Log.Warn("Session guardian not found next to the application; continuing without it.");
+                OnPropertyChanged(nameof(GuardianStatusText));
+                return;
+            }
+
+            _guardianProcess = Process.Start(new ProcessStartInfo
+            {
+                FileName = exe,
+                Arguments = $"--owner-pid {Environment.ProcessId}",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+
+            Log.Info("Session guardian started.");
+            OnPropertyChanged(nameof(GuardianStatusText));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Could not start the session guardian");
+        }
+    }
+
+    private void OnDevicesChanged(object? sender, AudioDeviceChangedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Reason))
+        {
+            return;
+        }
+
+        // React to disconnects: "removed:<id>" or "state:<id>".
+        if (!e.Reason.StartsWith("removed:", StringComparison.OrdinalIgnoreCase) &&
+            !e.Reason.StartsWith("state:", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var separator = e.Reason.IndexOf(':');
+        if (separator < 0 || separator + 1 >= e.Reason.Length)
+        {
+            return;
+        }
+
+        var deviceId = e.Reason[(separator + 1)..];
+
+        _dispatcher.BeginInvoke(() =>
+        {
+            var report = _routingSession.HandleDeviceLost(deviceId);
+            if (report.AffectedCount == 0)
+            {
+                return;
+            }
+
+            foreach (var result in report.Results)
+            {
+                AddLog($"DEVICE LOST {result.ApplicationIdentifier} -> {result.Status} ({result.DeviceId})");
+            }
+
+            OnPropertyChanged(nameof(SessionStateText));
+        });
+    }
+
+    private void EmergencyReset()
+    {        RoutingEnabled = false;
+
+        try
+        {
+            var report = _routingSession.EndSession();
+            _ruleEngine.DisableAudioLock();
+            _audioLockEnabled = false;
+            OnPropertyChanged(nameof(AudioLockEnabled));
+            OnPropertyChanged(nameof(SessionStateText));
+            AddLog(report.Success
+                ? $"{Loc.Get("EmergencyResetDone")} ({report.Summary})"
+                : $"{Loc.Get("EmergencyResetIncomplete")} ({report.Summary})");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Emergency reset failed");
+        }
     }
 
     private void RefreshDevicesAndSessions()
@@ -852,8 +1033,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         var applied = 0;
-        var verified = 0;
-        var unverified = 0;
+        var failed = 0;
         foreach (var session in sessions)
         {
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
@@ -863,27 +1043,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 continue;
             }
 
-            var result = _routingManager.Apply(session.ProcessId, key, resolution.OutputDeviceId);
-            if (result.Success)
+            var identity = new ApplicationIdentity
+            {
+                Key = key,
+                Aumid = session.Aumid,
+                ExecutablePath = session.ProcessPath,
+                PathHash = session.ApplicationPathHash,
+                ProcessName = session.ProcessName,
+                DisplayName = session.ApplicationName
+            };
+
+            if (_routingSession.ApplyRoute(identity, session.ProcessId, resolution.OutputDeviceId, out _))
             {
                 applied++;
-                if (result.Verified)
-                {
-                    verified++;
-                }
-                else
-                {
-                    unverified++;
-                }
+            }
+            else
+            {
+                failed++;
             }
         }
 
         if (manual)
         {
-            // R6: never report a plain success when verification was not possible.
-            AddLog(unverified == 0
-                ? Loc.Format("RoutingApplied", verified)
-                : Loc.Format("RoutingRequested", applied, verified, unverified));
+            AddLog(Loc.Format("RoutingAppliedTemporary", applied, failed));
         }
     }
 
@@ -902,9 +1084,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var resolution = _ruleEngine.Resolve(key, session.ApplicationPathHash);
             if (!string.IsNullOrWhiteSpace(resolution.OutputDeviceId))
             {
-                var result = _routingManager.Apply(session.ProcessId, key, resolution.OutputDeviceId);
-                var verdict = result.Verified ? "verified" : "requested (not verified yet)";
-                AddLog($"{session.ProcessName} -> {resolution.Reason} [{verdict}]");
+                var identity = new ApplicationIdentity
+                {
+                    Key = key,
+                    Aumid = session.Aumid,
+                    ExecutablePath = session.ProcessPath,
+                    PathHash = session.ApplicationPathHash,
+                    ProcessName = session.ProcessName,
+                    DisplayName = session.ApplicationName
+                };
+
+                var ok = _routingSession.ApplyRoute(identity, session.ProcessId, resolution.OutputDeviceId, out var error);
+                AddLog($"{session.ProcessName} -> {resolution.Reason} [{(ok ? "applied" : error)}]");
             }
         });
     }
@@ -929,12 +1120,45 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         Log.LineWritten -= OnLogLineWritten;
+
+        // Always restore Windows audio before exiting.
+        try
+        {
+            var report = _routingSession.EndSession();
+            if (!report.Success)
+            {
+                Log.Warn($"Restore incomplete on exit: {report.Summary}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Restore on exit failed");
+        }
+
         _updateCts?.Cancel();
         _updateCts?.Dispose();
         _updateService?.Dispose();
+        _deviceManager.DevicesChanged -= OnDevicesChanged;
         _monitor.Dispose();
+        _routingRegistry.Dispose();
         _deviceManager.Dispose();
         _sessionManager.Dispose();
+        _routingBackend.Dispose();
+
+        try
+        {
+            _guardianProcess?.Dispose();
+        }
+        catch
+        {
+            // best effort
+        }
     }
 }

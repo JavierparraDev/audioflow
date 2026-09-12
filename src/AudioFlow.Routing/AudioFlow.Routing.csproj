@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>AudioFlow.Routing</RootNamespace>
+    <AssemblyName>AudioFlow.Routing</AssemblyName>
+    <Description>Swappable audio routing backends (policy endpoint, virtual endpoint).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AudioFlow.Core\AudioFlow.Core.csproj" />
+    <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
+    <ProjectReference Include="..\AudioFlow.Applications\AudioFlow.Applications.csproj" />
+    <ProjectReference Include="..\AudioFlow.Session\AudioFlow.Session.csproj" />
+  </ItemGroup>
+
+</Project>

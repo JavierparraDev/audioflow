@@ -33,13 +33,31 @@ internal static class Program
                 case "plan":
                     return Commands.Plan();
                 case "apply":
-                    return Commands.Apply();
+                    return Commands.Apply(rest);
+                case "session":
+                    return Commands.Session();
+                case "restore":
+                    return Commands.Restore();
+                case "diagnostics":
+                    return Commands.Diagnostics();
+                case "routing":
+                    return Commands.Routing();
+                case "routing-test":
+                    return Commands.RoutingTest(rest);
+                case "guardian":
+                    return Commands.Guardian(rest);
                 case "verify":
                     return Commands.Verify(rest);
                 case "route-pid":
                     return Commands.RoutePid(rest);
                 case "loopback-probe":
                     return Commands.LoopbackProbe(rest);
+                case "loopback-capture":
+                    return Commands.LoopbackCapture(rest);
+                case "mute-pid":
+                    return Commands.MutePid(rest);
+                case "live-route":
+                    return Commands.LiveRoute(rest);
                 case "set-default":
                     return Commands.SetDefault(rest);
                 case "set-rule":

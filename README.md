@@ -66,6 +66,36 @@ keeps working normally when offline.
 
 See [docs/UPDATES.md](docs/UPDATES.md).
 
+## Session & safety
+
+Routing is **session-scoped**. While AudioFlow is open, rules may be active; when
+AudioFlow closes, Windows returns to its normal audio behavior. AudioFlow
+snapshots the original state, writes an atomic recovery marker before changing
+anything, and restores on exit. If AudioFlow crashes, the next launch restores
+Windows audio **before** doing anything else and never re-activates routing
+automatically.
+
+```powershell
+audioflow session   # ACTIVE | INACTIVE | STALE
+audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
+.\tools\emergency-restore.ps1   # restore without the UI
+```
+
+See [docs/SESSION-RULES.md](docs/SESSION-RULES.md) and
+[docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
+
+A small independent **Session Guardian** (`AudioFlow.SessionGuardian.exe`)
+monitors AudioFlow while it runs and restores Windows audio within seconds if
+AudioFlow crashes, without waiting for a restart. Device disconnects are handled
+by restoring only the affected applications. See
+[docs/SESSION-GUARDIAN.md](docs/SESSION-GUARDIAN.md) and
+[docs/DEVICE-RECOVERY.md](docs/DEVICE-RECOVERY.md).
+
+```powershell
+audioflow diagnostics   # session / guardian / devices / routes
+audioflow guardian status
+```
+
 ## Usage
 
 1. Run `publish/ui/AudioFlow.exe`.
@@ -85,7 +115,21 @@ audioflow verify "Speakers"   # measure the real audio level per endpoint
 audioflow loopback-probe <pid>  # experimental process loopback probe
 audioflow version             # show the version (e.g. AudioFlow 0.2.0)
 audioflow update --check      # check GitHub Releases for updates
+audioflow routing             # routing backends + virtual endpoint status
 ```
+
+## Routing backends
+
+AudioFlow routes through a swappable backend layer (`AudioFlow.Routing`):
+
+- **Policy Endpoint** — sets the application's persisted output endpoint. No
+  duplication; applies when the app restarts its audio stream. Available today.
+- **Virtual Endpoint** — captures a virtual endpoint's loopback and renders it to
+  the target. Live and duplication-free, but requires a virtual audio endpoint
+  to be installed; otherwise it reports `BLOCKED`.
+
+See [docs/ROUTING-BACKENDS.md](docs/ROUTING-BACKENDS.md) and
+[docs/VIRTUAL-ENDPOINT-INTEGRATION.md](docs/VIRTUAL-ENDPOINT-INTEGRATION.md).
 
 ## Architecture
 
