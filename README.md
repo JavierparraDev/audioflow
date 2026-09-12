@@ -36,13 +36,35 @@ Everything else    ->  Headphones (default rule)
 
 ## Installation
 
-Download a published build, or build from source:
+**Installer (recommended):** download `AudioFlow-Setup-v<version>.exe` from
+[Releases](https://github.com/JavierparraDev/audioflow/releases) and run it.
+It installs to Program Files, creates a Start Menu shortcut and registers an
+uninstaller. Your configuration in `%APPDATA%\AudioFlow` is never touched.
+
+**Portable:** download `AudioFlow-v<version>-win-x64.zip`, extract it and run
+`AudioFlow.exe`. Data is stored in a `data\` folder next to the app.
+
+**From source:**
 
 ```powershell
 git clone https://github.com/JavierparraDev/audioflow.git
 cd audioflow
-./publish.ps1            # produces publish/ui/AudioFlow.exe and publish/cli/audioflow.exe
+./install.ps1 -Launch      # local install, no admin
+./install.ps1 -Release     # build installer + portable ZIP (needs Inno Setup)
 ```
+
+See [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+## Updates
+
+AudioFlow checks GitHub Releases once at startup (configurable) and shows the
+result in **Settings > Updates**. If a new version exists, **Update now**
+downloads it, verifies its SHA-256, and hands it to the standalone
+`AudioFlow.Updater.exe`, which backs up your settings, applies the update and
+restarts AudioFlow. Updates never run while the app is running, and AudioFlow
+keeps working normally when offline.
+
+See [docs/UPDATES.md](docs/UPDATES.md).
 
 ## Usage
 
@@ -61,6 +83,8 @@ audioflow plan           # show the resolved routing
 audioflow apply          # apply the rules to active sessions
 audioflow verify "Speakers"   # measure the real audio level per endpoint
 audioflow loopback-probe <pid>  # experimental process loopback probe
+audioflow version             # show the version (e.g. AudioFlow 0.2.0)
+audioflow update --check      # check GitHub Releases for updates
 ```
 
 ## Architecture
@@ -71,7 +95,10 @@ src/
 ├── AudioFlow.Core           Devices, sessions, routing, verification
 ├── AudioFlow.Applications   Process manager + stable identification
 ├── AudioFlow.Rules          Rule engine + JSON persistence
+├── AudioFlow.Configuration  App paths, settings, migrations (installed/portable)
+├── AudioFlow.Updates        Version comparison, GitHub releases, checksums
 ├── AudioFlow.ProcessLoopback Experimental (official Process Loopback API)
+├── AudioFlow.Updater        Standalone, verified updater process
 ├── AudioFlow.Console        CLI
 └── AudioFlow.UI             WPF desktop app (localized)
 ```

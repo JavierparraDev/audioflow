@@ -4,9 +4,18 @@
 [Dd]ebug/
 [Rr]elease/
 artifacts/
+publish/
 *.user
 *.suo
 .vs/
+
+# Local rules / settings / logs produced at runtime
+rules.json
+settings.json
+*.bak
+*.tmp
+logs/
+*.log
 
 # .NET
 project.lock.json
