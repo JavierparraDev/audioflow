@@ -40,6 +40,12 @@ internal static class Program
                     return Commands.RoutePid(rest);
                 case "loopback-probe":
                     return Commands.LoopbackProbe(rest);
+                case "loopback-capture":
+                    return Commands.LoopbackCapture(rest);
+                case "mute-pid":
+                    return Commands.MutePid(rest);
+                case "live-route":
+                    return Commands.LiveRoute(rest);
                 case "set-default":
                     return Commands.SetDefault(rest);
                 case "set-rule":
