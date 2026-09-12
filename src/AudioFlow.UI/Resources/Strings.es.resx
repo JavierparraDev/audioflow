@@ -133,4 +133,23 @@
   <data name="UpdateNoInstaller" xml:space="preserve"><value>No se encontró un instalador en la versión publicada.</value></data>
   <data name="UpdateNoUpdater" xml:space="preserve"><value>No se encontró el actualizador junto a la aplicación.</value></data>
   <data name="UpdatesNote" xml:space="preserve"><value>AudioFlow solo contacta con GitHub para comprobar actualizaciones. Nunca envía audio, aplicaciones, dispositivos ni información personal.</value></data>
+  <data name="SessionActive" xml:space="preserve"><value>Activa</value></data>
+  <data name="SessionInactive" xml:space="preserve"><value>Inactiva</value></data>
+  <data name="SessionStale" xml:space="preserve"><value>Sesión pendiente</value></data>
+  <data name="SessionRecovered" xml:space="preserve"><value>Recuperada</value></data>
+  <data name="SessionLabel" xml:space="preserve"><value>Sesión de AudioFlow</value></data>
+  <data name="RoutingModeLabel" xml:space="preserve"><value>Modo de routing</value></data>
+  <data name="RoutingModeTemporary" xml:space="preserve"><value>Sesión temporal</value></data>
+  <data name="SafetyLabel" xml:space="preserve"><value>Protección de sesión</value></data>
+  <data name="SafetyHint" xml:space="preserve"><value>El audio de Windows volverá a la normalidad al cerrar AudioFlow.</value></data>
+  <data name="BtnEmergencyReset" xml:space="preserve"><value>Restablecer de emergencia</value></data>
+  <data name="EmergencyResetDone" xml:space="preserve"><value>Audio de Windows restaurado</value></data>
+  <data name="EmergencyResetIncomplete" xml:space="preserve"><value>Restauración incompleta; algunas aplicaciones no estaban en ejecución</value></data>
+  <data name="RoutingAppliedTemporary" xml:space="preserve"><value>Routing aplicado a {0} sesión(es) ({1} fallidas). El audio de Windows se restaurará al cerrar AudioFlow.</value></data>
+  <data name="SettingsSafety" xml:space="preserve"><value>Sesión y seguridad</value></data>
+  <data name="CloseCompletely" xml:space="preserve"><value>Cerrar AudioFlow por completo al cerrar la ventana (si no, se minimiza a la bandeja)</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Abrir AudioFlow</value></data>
+  <data name="TrayStopRouting" xml:space="preserve"><value>Detener routing</value></data>
+  <data name="TrayDiagnostics" xml:space="preserve"><value>Diagnóstico</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Salir de AudioFlow</value></data>
 </root>

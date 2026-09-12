@@ -1,5 +1,6 @@
 using System.Windows.Data;
 using System.Windows.Markup;
+using Binding = System.Windows.Data.Binding;
 
 namespace AudioFlow.UI.Localization;
 
