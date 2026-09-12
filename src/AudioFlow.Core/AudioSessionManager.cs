@@ -67,6 +67,93 @@ public sealed class AudioSessionManager : IDisposable
         return result;
     }
 
+    /// <summary>
+    /// Mutes or unmutes every audio session belonging to a process. Used by the
+    /// live routing pipeline to suppress the original output and avoid audio
+    /// duplication. Returns the number of sessions changed.
+    /// </summary>
+    public int SetProcessMute(uint processId, bool mute)
+    {
+        var changed = 0;
+        var collection = _enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+
+        for (var i = 0; i < collection.Count; i++)
+        {
+            MMDevice device;
+            try
+            {
+                device = collection[i];
+            }
+            catch
+            {
+                continue;
+            }
+
+            using (device)
+            {
+                NAudio.CoreAudioApi.AudioSessionManager sessionManager;
+                try
+                {
+                    sessionManager = device.AudioSessionManager;
+                }
+                catch
+                {
+                    continue;
+                }
+
+                SessionCollection sessions;
+                try
+                {
+                    sessions = sessionManager.Sessions;
+                }
+                catch
+                {
+                    continue;
+                }
+
+                if (sessions is null)
+                {
+                    continue;
+                }
+
+                for (var s = 0; s < sessions.Count; s++)
+                {
+                    AudioSessionControl? control = null;
+                    try
+                    {
+                        control = sessions[s];
+                        if (control.GetProcessID != processId)
+                        {
+                            continue;
+                        }
+
+                        var volume = control.SimpleAudioVolume;
+                        if (volume is not null && volume.Mute != mute)
+                        {
+                            volume.Mute = mute;
+                            changed++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug($"SetProcessMute failed for pid {processId}: {ex.Message}");
+                    }
+                    finally
+                    {
+                        control?.Dispose();
+                    }
+                }
+            }
+        }
+
+        if (changed > 0)
+        {
+            Log.Info($"SetProcessMute: pid {processId} mute={mute} ({changed} session(s))");
+        }
+
+        return changed;
+    }
+
     internal static void ReadDeviceSessions(
         MMDevice device,
         ProcessManager processManager,
