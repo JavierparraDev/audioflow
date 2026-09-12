@@ -38,6 +38,10 @@ internal static class Program
                     return Commands.Session();
                 case "restore":
                     return Commands.Restore();
+                case "diagnostics":
+                    return Commands.Diagnostics();
+                case "guardian":
+                    return Commands.Guardian(rest);
                 case "verify":
                     return Commands.Verify(rest);
                 case "route-pid":

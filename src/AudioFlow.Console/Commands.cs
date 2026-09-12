@@ -26,6 +26,8 @@ internal static class Commands
         Console.WriteLine("  audioflow apply [--duration N]       Apply rules for a temporary session (restores on exit)");
         Console.WriteLine("  audioflow session                    Show the AudioFlow session state (ACTIVE/INACTIVE/STALE)");
         Console.WriteLine("  audioflow restore                    Restore Windows audio changed by AudioFlow");
+        Console.WriteLine("  audioflow diagnostics                Session/guardian/devices/routes status");
+        Console.WriteLine("  audioflow guardian status            Guardian process status");
         Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
         Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
         Console.WriteLine("  audioflow loopback-probe <pid>       Probe Windows Process Loopback (experimental)");
@@ -711,6 +713,62 @@ internal static class Commands
         Footer();
         return 0;
     }
+
+    public static int Diagnostics()
+    {
+        Banner("DIAGNOSTICS");
+
+        var marker = new SessionMarker();
+        var snapshot = marker.Read();
+        string sessionState;
+        if (snapshot is null)
+        {
+            sessionState = "INACTIVE";
+        }
+        else
+        {
+            sessionState = snapshot.OwnerProcessId != 0 && IsProcessAlive(snapshot.OwnerProcessId) ? "ACTIVE" : "STALE";
+        }
+
+        Console.WriteLine($"Session : {sessionState}");
+        Console.WriteLine($"Guardian: {(IsGuardianRunning() ? "RUNNING" : "NOT RUNNING")}");
+
+        using var devices = new AudioDeviceManager();
+        var active = devices.GetOutputDevices(includeInactive: false);
+        Console.WriteLine($"Devices : {active.Count} connected");
+
+        Console.WriteLine("Routes  :");
+        if (snapshot is null || snapshot.Applications.Count == 0)
+        {
+            Console.WriteLine("  (none)");
+        }
+        else
+        {
+            foreach (var app in snapshot.Applications)
+            {
+                Console.WriteLine($"  {app.ApplicationIdentifier} -> {app.AudioFlowTargetDeviceId ?? "-"} " +
+                                  $"(original: {app.OriginalDeviceId ?? "none"})");
+            }
+        }
+
+        Footer();
+        return 0;
+    }
+
+    public static int Guardian(string[] args)
+    {
+        if (args.Length == 0 || !args[0].Equals("status", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("Usage: audioflow guardian status");
+            return 1;
+        }
+
+        Console.WriteLine(IsGuardianRunning() ? "RUNNING" : "NOT RUNNING");
+        return 0;
+    }
+
+    private static bool IsGuardianRunning() =>
+        Process.GetProcessesByName("AudioFlow.SessionGuardian").Length > 0;
 
     public static int SetDefault(string[] args)
     {
