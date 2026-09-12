@@ -113,7 +113,22 @@ audioflow verify "Parlantes"   # mide el nivel real de audio por endpoint
 audioflow loopback-probe <pid> # sonda experimental de process loopback
 audioflow version             # muestra la versión (p. ej. AudioFlow 0.2.0)
 audioflow update --check      # comprueba actualizaciones en GitHub Releases
+audioflow routing             # backends de routing + estado del endpoint virtual
 ```
+
+## Backends de routing
+
+AudioFlow enruta mediante una capa de backends intercambiables
+(`AudioFlow.Routing`):
+
+- **Policy Endpoint** — fija el endpoint persistido de la app. Sin duplicación;
+  aplica al reiniciar el stream. Disponible hoy.
+- **Virtual Endpoint** — captura el loopback de un endpoint virtual y lo
+  renderiza al destino. Live y sin duplicación, pero requiere un endpoint de
+  audio virtual instalado; si no, reporta `BLOCKED`.
+
+Ver [docs/ROUTING-BACKENDS.md](docs/ROUTING-BACKENDS.md) y
+[docs/VIRTUAL-ENDPOINT-INTEGRATION.md](docs/VIRTUAL-ENDPOINT-INTEGRATION.md).
 
 ## Arquitectura
 

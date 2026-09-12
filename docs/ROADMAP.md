@@ -59,6 +59,18 @@
 - [ ] Physical device-disconnect test.
 - [ ] Windows logoff/restart/shutdown physical test.
 
+## Real routing backend (Phase 5)
+
+- [x] Swappable routing abstractions (`AudioFlow.Routing`).
+- [x] Virtual audio device detection (heuristics, no hardcoded names).
+- [x] Policy Endpoint backend (no duplication; stream-restart).
+- [x] Virtual Endpoint backend (endpoint-loopback capture → render).
+- [x] Endpoint renderer physically verified (tone → peak 0.5968).
+- [x] CLI `routing` / `routing-test`; UI backend status card.
+- [ ] Install/obtain a virtual audio endpoint (virtual cable or own driver).
+- [ ] Physical tests 1–4 (Spotify/Chrome/simultaneous) — BLOCKED without it.
+- [ ] 1/3/5-pipeline performance measurement.
+
 ## Next
 
 - [ ] **Live routing via Process Loopback**: capture a process and re-render to

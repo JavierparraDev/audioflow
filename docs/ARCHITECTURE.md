@@ -107,6 +107,11 @@ src/
 ├── AudioFlow.Applications    ProcessManager, ApplicationIdentifier
 ├── AudioFlow.Core            Dispositivos, sesiones, routing, verificación
 ├── AudioFlow.Rules           RuleEngine, RuleStorage (JSON atómico)
+├── AudioFlow.Configuration   Rutas, settings, migraciones (instalado/portable)
+├── AudioFlow.Updates         Versiones, GitHub Releases, checksums
+├── AudioFlow.Session         Snapshot, restore, crash recovery
+├── AudioFlow.Routing         Backends de routing (policy / virtual endpoint)
+├── AudioFlow.SessionGuardian Guardian independiente (restore-on-crash)
 ├── AudioFlow.ProcessLoopback EXPERIMENTAL (API oficial, aislado)
 ├── AudioFlow.Console         CLI de diagnóstico
 └── AudioFlow.UI              WPF + localización (EN/ES)

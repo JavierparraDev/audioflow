@@ -120,3 +120,20 @@ or on the next launch after a crash. Limitations:
   end, but the fail-safe was not triggered physically.
 - The guardian restores only applications in the session snapshot; it never
   touches unrelated audio settings.
+
+## 12. Real routing backend (Phase 5)
+
+- **Live, duplication-free routing is BLOCKED** without a virtual audio
+  endpoint. The application must render to a virtual endpoint (a null sink) for
+  AudioFlow to capture and re-render; no such endpoint is installed in the test
+  environment.
+- The detected "virtual" device (`NGENUITY - Chat (HyperX Virtual Audio Device)`)
+  is **not** a null sink, so using it would still duplicate.
+- The **Policy Endpoint** backend works today with no duplication but applies
+  when the application recreates its audio stream (not live).
+- Endpoint-loopback capture and the endpoint renderer are implemented; the
+  renderer is physically verified (tone → target peak 0.5968). Some physical
+  endpoints (Speaker Realtek, FxSound) do not register a meter on the test
+  machine.
+- Physical routing tests for Spotify/Chrome/simultaneous routing were **not
+  executed** (blocked).
