@@ -3,16 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <RootNamespace>AudioFlow.ConsoleApp</RootNamespace>
-    <AssemblyName>audioflow</AssemblyName>
+    <RootNamespace>AudioFlow.Updater</RootNamespace>
+    <AssemblyName>AudioFlow.Updater</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <Description>Standalone updater for AudioFlow. Verifies the package, backs up user data and applies the update.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AudioFlow.Core\AudioFlow.Core.csproj" />
-    <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
-    <ProjectReference Include="..\AudioFlow.Rules\AudioFlow.Rules.csproj" />
-    <ProjectReference Include="..\AudioFlow.ProcessLoopback\AudioFlow.ProcessLoopback.csproj" />
     <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
     <ProjectReference Include="..\AudioFlow.Updates\AudioFlow.Updates.csproj" />
   </ItemGroup>

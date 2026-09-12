@@ -59,3 +59,17 @@ interface (verified on Windows 11 build 26200). It does **not** yet:
 - Exclusive-mode games may not be affected.
 - `MMDeviceCollection` (NAudio) is not `IDisposable`; its COM object is released
   by the GC.
+
+## 8. Updates and distribution
+
+- The updater applies the **installer** (or a portable ZIP) but cannot replace
+  files while AudioFlow is running; it uses a separate process that waits for the
+  app to exit.
+- Update checks require internet access to GitHub. Offline, AudioFlow works
+  normally and simply reports that it could not check.
+- Packages are verified by SHA-256. There is **no code signing yet**; signed
+  installers are planned.
+- A silent uninstall preserves `%APPDATA%\AudioFlow`. Only an interactive
+  uninstall asks, and the default is to keep the data.
+- Portable mode stores data in `<app>\data`; do not mix a portable install with
+  an installed one (different data locations).

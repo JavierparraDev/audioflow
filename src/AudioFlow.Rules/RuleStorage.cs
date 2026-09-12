@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AudioFlow.Configuration;
 using AudioFlow.Models;
 
 namespace AudioFlow.Rules;
@@ -28,13 +29,9 @@ public sealed class RuleStorage
 
     public static string DefaultPath()
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        if (string.IsNullOrEmpty(appData))
-        {
-            appData = AppContext.BaseDirectory;
-        }
-
-        return Path.Combine(appData, "AudioFlow", "rules.json");
+        // User rules live in %APPDATA%\AudioFlow (or the portable data folder),
+        // never inside the installation directory.
+        return AppPaths.RulesFile;
     }
 
     public AudioRuleSet Load()

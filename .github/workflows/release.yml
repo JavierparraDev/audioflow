@@ -1,0 +1,70 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Derive version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Release version: $version"
+
+      - name: Unit tests
+        run: dotnet test tests/AudioFlow.Tests -c Release
+
+      - name: Build release artifacts
+        shell: pwsh
+        run: ./tools/release.ps1 -Version "${{ steps.version.outputs.version }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: audioflow-release
+          path: |
+            artifacts/AudioFlow-Setup-*.exe
+            artifacts/AudioFlow-*-win-x64.zip
+            artifacts/SHA256SUMS.txt
+            artifacts/release.json
+            artifacts/RELEASE-NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: AudioFlow ${{ steps.version.outputs.version }}
+          body_path: artifacts/RELEASE-NOTES.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            artifacts/AudioFlow-Setup-*.exe
+            artifacts/AudioFlow-*-win-x64.zip
+            artifacts/SHA256SUMS.txt
+            artifacts/release.json

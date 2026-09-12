@@ -1,14 +1,18 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using AudioFlow.Configuration;
 using AudioFlow.Core;
 using AudioFlow.Core.Logging;
 using AudioFlow.Models;
 using AudioFlow.Rules;
 using AudioFlow.UI.Localization;
+using AudioFlow.UI.Services;
 using AudioFlow.UI.ViewModels;
+using AudioFlow.Updates;
 
 namespace AudioFlow.UI.ViewModels;
 
@@ -20,6 +24,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly AudioRoutingManager _routingManager = new();
     private readonly AudioSessionMonitor _monitor;
     private readonly Dispatcher _dispatcher;
+    private readonly SettingsStore _settingsStore = new();
+
+    private AppSettings _settings = new();
+    private UpdateService? _updateService;
+    private CancellationTokenSource? _updateCts;
 
     private bool _suppressSideEffects;
     private bool _initialized;
@@ -42,6 +51,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplyNowCommand = new RelayCommand(_ => ApplyAll(manual: true));
         RefreshCommand = new RelayCommand(_ => RefreshDevicesAndSessions());
         OpenLogsCommand = new RelayCommand(_ => OpenLogFolder());
+        CheckForUpdatesCommand = new RelayCommand(async _ => await CheckForUpdatesAsync(force: true));
+        UpdateNowCommand = new RelayCommand(async _ => await UpdateNowAsync());
+        OpenReleasesCommand = new RelayCommand(_ => OpenUrl(UpdateDefaults.RepositoryUrl + "/releases"));
     }
 
     public ObservableCollection<DeviceOption> OutputDevices { get; } = new();
@@ -57,6 +69,93 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand ApplyNowCommand { get; }
     public ICommand RefreshCommand { get; }
     public ICommand OpenLogsCommand { get; }
+    public ICommand CheckForUpdatesCommand { get; }
+    public ICommand UpdateNowCommand { get; }
+    public ICommand OpenReleasesCommand { get; }
+
+    public string AppVersionText => AudioFlowVersion.Current;
+
+    private string _updateCurrentVersion = AudioFlowVersion.Current;
+    public string UpdateCurrentVersion
+    {
+        get => _updateCurrentVersion;
+        private set => SetProperty(ref _updateCurrentVersion, value);
+    }
+
+    private string _updateLatestVersion = "-";
+    public string UpdateLatestVersion
+    {
+        get => _updateLatestVersion;
+        private set => SetProperty(ref _updateLatestVersion, value);
+    }
+
+    private string _updateStatus = string.Empty;
+    public string UpdateStatusText
+    {
+        get => _updateStatus;
+        private set => SetProperty(ref _updateStatus, value);
+    }
+
+    private string _updateMessage = string.Empty;
+    public string UpdateMessage
+    {
+        get => _updateMessage;
+        private set => SetProperty(ref _updateMessage, value);
+    }
+
+    private string _lastChecked = "-";
+    public string LastChecked
+    {
+        get => _lastChecked;
+        private set => SetProperty(ref _lastChecked, value);
+    }
+
+    private bool _isUpdateAvailable;
+    public bool IsUpdateAvailable
+    {
+        get => _isUpdateAvailable;
+        private set => SetProperty(ref _isUpdateAvailable, value);
+    }
+
+    private bool _isCheckingUpdate;
+    public bool IsCheckingUpdate
+    {
+        get => _isCheckingUpdate;
+        private set => SetProperty(ref _isCheckingUpdate, value);
+    }
+
+    private bool _checkForUpdatesEnabled = true;
+    public bool CheckForUpdatesEnabled
+    {
+        get => _checkForUpdatesEnabled;
+        set
+        {
+            if (!SetProperty(ref _checkForUpdatesEnabled, value))
+            {
+                return;
+            }
+
+            _settings.CheckForUpdates = value;
+            SaveSettings();
+        }
+    }
+
+    private bool _startWithWindows;
+    public bool StartWithWindows
+    {
+        get => _startWithWindows;
+        set
+        {
+            if (!SetProperty(ref _startWithWindows, value))
+            {
+                return;
+            }
+
+            StartupRegistration.SetEnabled(value);
+            _settings.StartWithWindows = value;
+            SaveSettings();
+        }
+    }
 
     private LanguageOption _selectedLanguage;
     public LanguageOption SelectedLanguage
@@ -70,9 +169,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             Loc.SetLanguage(value.Code);
+            _settings.Language = value.Code;
+            SaveSettings();
             OnPropertyChanged(nameof(StatusText));
             OnPropertyChanged(nameof(StartStopText));
             OnPropertyChanged(nameof(AudioLockStateText));
+            OnPropertyChanged(nameof(UpdateStatusText));
+            OnPropertyChanged(nameof(UpdateMessage));
         }
     }
 
@@ -175,9 +278,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            var logDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AudioFlow", "logs");
-            Log.UseFile(Path.Combine(logDir, "audioflow.log"));
+            Directory.CreateDirectory(AppPaths.LogsDirectory);
+            Log.UseFile(Path.Combine(AppPaths.LogsDirectory, "audioflow.log"));
         }
         catch
         {
@@ -185,7 +287,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         Log.LineWritten += OnLogLineWritten;
-        Log.Info("AudioFlow started");
+        Log.Info($"AudioFlow {AudioFlowVersion.Current} started");
+
+        LoadSettingsAndUpdates();
 
         RefreshDevices();
         LoadRules();
@@ -196,6 +300,49 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _monitor.Start();
 
         RefreshSessions();
+    }
+
+    private void LoadSettingsAndUpdates()
+    {
+        _settings = _settingsStore.Load();
+
+        // Apply the persisted language.
+        var language = Languages.FirstOrDefault(l =>
+                           string.Equals(l.Code, _settings.Language, StringComparison.OrdinalIgnoreCase))
+                       ?? Languages[0];
+        _selectedLanguage = language;
+        Loc.SetLanguage(language.Code);
+
+        _startWithWindows = StartupRegistration.IsEnabled();
+        OnPropertyChanged(nameof(StartWithWindows));
+
+        _checkForUpdatesEnabled = _settings.CheckForUpdates;
+        OnPropertyChanged(nameof(CheckForUpdatesEnabled));
+
+        UpdateCurrentVersion = AudioFlowVersion.Current;
+        if (_settings.LastUpdateCheckUtc is { } last)
+        {
+            LastChecked = last.ToLocalTime().ToString("g");
+        }
+
+        InitializeUpdateService();
+
+        if (_settings.CheckForUpdates)
+        {
+            // Never block startup waiting for GitHub.
+            _ = CheckForUpdatesAsync(force: false);
+        }
+    }
+
+    private void InitializeUpdateService()
+    {
+        _updateCts?.Cancel();
+        _updateCts = new CancellationTokenSource();
+        _updateService?.Dispose();
+        _updateService = new UpdateService(
+            new GitHubReleaseSource(),
+            AppVersion.Parse(AudioFlowVersion.Current),
+            UpdateService.ParseChannel(_settings.UpdateChannel));
     }
 
     private void OnLogLineWritten(LogLevel level, string message)
@@ -505,14 +652,180 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AudioFlow", "logs");
-            Directory.CreateDirectory(dir);
-            Process.Start(new ProcessStartInfo { FileName = dir, UseShellExecute = true });
+            Directory.CreateDirectory(AppPaths.LogsDirectory);
+            Process.Start(new ProcessStartInfo { FileName = AppPaths.LogsDirectory, UseShellExecute = true });
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Could not open the log folder");
+        }
+    }
+
+    private void SaveSettings()
+    {
+        _settings.ConfigVersion = ConfigMigrator.CurrentVersion;
+        if (!_settingsStore.Save(_settings))
+        {
+            Log.Warn(_settingsStore.LastError ?? "Could not save settings");
+        }
+    }
+
+    private async Task CheckForUpdatesAsync(bool force)
+    {
+        if (_updateService is null || IsCheckingUpdate)
+        {
+            return;
+        }
+
+        IsCheckingUpdate = true;
+        UpdateStatusText = Loc.Get("UpdateChecking");
+
+        try
+        {
+            var token = _updateCts?.Token ?? CancellationToken.None;
+            var result = await _updateService.CheckAsync(_settings.LastUpdateCheckUtc, force, token);
+            ApplyUpdateResult(result);
+
+            if (result.Status is UpdateStatus.UpToDate or UpdateStatus.UpdateAvailable)
+            {
+                _settings.LastUpdateCheckUtc = result.CheckedAt;
+                SaveSettings();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Update check failed");
+        }
+        finally
+        {
+            IsCheckingUpdate = false;
+        }
+    }
+
+    private void ApplyUpdateResult(UpdateCheckResult result)
+    {
+        UpdateCurrentVersion = result.Current.ToString();
+        UpdateLatestVersion = result.Latest?.ToString() ?? "-";
+        LastChecked = result.CheckedAt.ToLocalTime().ToString("g");
+        IsUpdateAvailable = result.UpdateAvailable;
+
+        UpdateStatusText = result.Status switch
+        {
+            UpdateStatus.UpToDate => Loc.Get("UpdateUpToDate"),
+            UpdateStatus.UpdateAvailable => Loc.Get("UpdateAvailable"),
+            UpdateStatus.NoReleaseFound => Loc.Get("UpdateNoRelease"),
+            UpdateStatus.Failed => Loc.Get("UpdateUnable"),
+            _ => Loc.Get("UpdateUnknown")
+        };
+
+        UpdateMessage = result.Status switch
+        {
+            UpdateStatus.UpToDate => Loc.Get("UpdateUpToDateMessage"),
+            UpdateStatus.UpdateAvailable => Loc.Format("UpdateAvailableMessage", result.Latest?.ToString() ?? "?"),
+            UpdateStatus.NoReleaseFound => Loc.Get("UpdateNoReleaseMessage"),
+            UpdateStatus.Failed => Loc.Get("UpdateUnableMessage"),
+            _ => string.Empty
+        };
+    }
+
+    private async Task UpdateNowAsync()
+    {
+        if (_updateService is null)
+        {
+            return;
+        }
+
+        if (_updateService.LastResult?.Release is null)
+        {
+            await CheckForUpdatesAsync(force: true);
+        }
+
+        var release = _updateService.LastResult?.Release;
+        var installer = release?.Installer;
+        if (release is null || installer is null)
+        {
+            AddLog(Loc.Get("UpdateNoInstaller"));
+            return;
+        }
+
+        var updaterExe = Path.Combine(AppContext.BaseDirectory, "AudioFlow.Updater.exe");
+        if (!File.Exists(updaterExe))
+        {
+            AddLog(Loc.Get("UpdateNoUpdater"));
+            return;
+        }
+
+        UpdateStatusText = Loc.Get("UpdateDownloading");
+        try
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), "AudioFlow");
+            Directory.CreateDirectory(tempDir);
+            var installerPath = Path.Combine(tempDir, installer.Name);
+
+            // Resolve the checksum from SHA256SUMS.txt when present.
+            string? sha = null;
+            var sums = release.Assets.FirstOrDefault(a =>
+                a.Name.Equals("SHA256SUMS.txt", StringComparison.OrdinalIgnoreCase));
+            if (sums is not null)
+            {
+                var content = await _updateService.DownloadStringAsync(sums.DownloadUrl, _updateCts?.Token ?? CancellationToken.None);
+                if (content is not null)
+                {
+                    sha = Checksum.FindInSumsFile(content, installer.Name);
+                }
+            }
+
+            var progress = new Progress<double>(p =>
+                UpdateMessage = $"{Loc.Get("UpdateDownloading")} {(int)(p * 100)}%");
+
+            var download = await _updateService.DownloadAsync(
+                installer.DownloadUrl, installerPath, sha, progress, _updateCts?.Token ?? CancellationToken.None);
+
+            if (!download.Success)
+            {
+                UpdateStatusText = Loc.Get("UpdateFailed");
+                UpdateMessage = download.Error ?? string.Empty;
+                return;
+            }
+
+            var args = $"--wait-pid {Environment.ProcessId} --installer \"{installerPath}\"";
+            if (!string.IsNullOrWhiteSpace(sha))
+            {
+                args += $" --sha256 {sha}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(Environment.ProcessPath))
+            {
+                args += $" --restart \"{Environment.ProcessPath}\"";
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = updaterExe,
+                Arguments = args,
+                UseShellExecute = true
+            });
+
+            Log.Info("Updater launched; shutting down AudioFlow for the update.");
+            Application.Current?.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Update failed");
+            UpdateStatusText = Loc.Get("UpdateFailed");
+            UpdateMessage = ex.Message;
+        }
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+        }
+        catch
+        {
+            // Opening a URL is best effort.
         }
     }
 
@@ -617,6 +930,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         Log.LineWritten -= OnLogLineWritten;
+        _updateCts?.Cancel();
+        _updateCts?.Dispose();
+        _updateService?.Dispose();
         _monitor.Dispose();
         _deviceManager.Dispose();
         _sessionManager.Dispose();

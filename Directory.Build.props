@@ -9,7 +9,13 @@
     <Company>AudioFlow</Company>
     <Product>AudioFlow</Product>
     <Copyright>Copyright (c) 2026 Javier Parra</Copyright>
-    <Version>0.1.0</Version>
+
+    <!--
+      Single source of truth for the application version.
+      Everything (executable metadata, UI, CLI, installer, updater) reads this.
+      Bump with semantic versioning: MAJOR.MINOR.PATCH (e.g. 0.2.0, 1.0.0).
+    -->
+    <Version>0.2.0</Version>
 
     <!--
       Allows building Windows-targeted projects (net8.0-windows, NAudio, WPF)

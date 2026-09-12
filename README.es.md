@@ -35,11 +35,35 @@ Todo lo demás      ->  Audífonos (regla por defecto)
 
 ## Instalación
 
+**Instalador (recomendado):** descarga `AudioFlow-Setup-v<version>.exe` desde
+[Releases](https://github.com/JavierparraDev/audioflow/releases) y ejecútalo.
+Instala en Program Files, crea un acceso en el menú Inicio y registra el
+desinstalador. Tu configuración en `%APPDATA%\AudioFlow` nunca se toca.
+
+**Portable:** descarga `AudioFlow-v<version>-win-x64.zip`, extráelo y ejecuta
+`AudioFlow.exe`. Los datos se guardan en una carpeta `data\` junto a la app.
+
+**Desde el código:**
+
 ```powershell
 git clone https://github.com/JavierparraDev/audioflow.git
 cd audioflow
-./publish.ps1            # genera publish/ui/AudioFlow.exe y publish/cli/audioflow.exe
+./install.ps1 -Launch      # instalación local, sin admin
+./install.ps1 -Release     # genera instalador + ZIP portable (requiere Inno Setup)
 ```
+
+Ver [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+## Actualizaciones
+
+AudioFlow comprueba GitHub Releases al iniciar (configurable) y muestra el
+resultado en **Configuración > Actualizaciones**. Si hay una versión nueva,
+**Actualizar ahora** la descarga, verifica su SHA-256 y se la pasa al proceso
+independiente `AudioFlow.Updater.exe`, que hace copia de tu configuración, aplica
+la actualización y reinicia AudioFlow. Nunca se reemplazan archivos mientras la
+app está en ejecución, y AudioFlow sigue funcionando sin conexión.
+
+Ver [docs/UPDATES.md](docs/UPDATES.md).
 
 ## Uso
 
@@ -58,6 +82,8 @@ audioflow plan           # muestra el routing resuelto
 audioflow apply          # aplica las reglas a las sesiones activas
 audioflow verify "Parlantes"   # mide el nivel real de audio por endpoint
 audioflow loopback-probe <pid> # sonda experimental de process loopback
+audioflow version             # muestra la versión (p. ej. AudioFlow 0.2.0)
+audioflow update --check      # comprueba actualizaciones en GitHub Releases
 ```
 
 ## Arquitectura
@@ -68,7 +94,10 @@ src/
 ├── AudioFlow.Core           Dispositivos, sesiones, routing, verificación
 ├── AudioFlow.Applications   Gestor de procesos + identificación estable
 ├── AudioFlow.Rules          Motor de reglas + persistencia JSON
+├── AudioFlow.Configuration  Rutas, settings, migraciones (instalado/portable)
+├── AudioFlow.Updates        Comparación de versiones, GitHub, checksums
 ├── AudioFlow.ProcessLoopback Experimental (API oficial Process Loopback)
+├── AudioFlow.Updater        Actualizador independiente y verificado
 ├── AudioFlow.Console        CLI
 └── AudioFlow.UI             App WPF (localizada)
 ```

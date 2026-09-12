@@ -136,3 +136,29 @@ Not formally benchmarked. Observations:
 - Discord/Chrome/Game physical routing not tested (apps not available/playing
   under controlled conditions in this environment).
 - Process Loopback capture not implemented.
+
+## Installer, portable and updates (this phase)
+
+Environment: Windows 11 build 26200, Inno Setup 6.7.3, .NET SDK 8.0.425.
+
+| Test | Expected | Actual | Status |
+| ---- | -------- | ------ | ------ |
+| Release pipeline (`tools/release.ps1`) | Artifacts built | Tests 53/53; Setup 84.67 MB; ZIP 91.47 MB; SHA256SUMS; release.json | **PASS** |
+| Portable single-file app | Launches | Window created | **PASS** |
+| Installer silent per-user install | Files + shortcut | `AudioFlow.exe`, `AudioFlow.Updater.exe`, Start Menu shortcut | **PASS** |
+| Installed app launch | Window created | Window created | **PASS** |
+| Uninstaller | Removes binaries | Exit 0, binaries removed | **PASS** |
+| Uninstall preserves `%APPDATA%\AudioFlow` | Preserved | Marker preserved (silent) | **PASS** |
+| Updater refuses installer without SHA-256 | Exit non-zero | Exit code 3, logged | **PASS** |
+| Updater portable apply | Files copied, data kept | Binary copied; `data\rules.json` and `portable.txt` preserved | **PASS** |
+| Configuration backup before update | Backup created | `%APPDATA%\AudioFlow\backup\<timestamp>` | **PASS** |
+| `audioflow version` | Prints version | `AudioFlow 0.2.0` | **PASS** |
+| `audioflow update --check` | Contacts GitHub | "No release published yet" (real API call) | **PASS** |
+| `install.ps1` (dev) | Local install | Installed + shortcut + window | **PASS** |
+| `install.ps1 -Clean -Force` | Removes install | Removed, kept user data | **PASS** |
+| `tools/dev-update.ps1 -Build` | Update + build | Fetch, version compare, restore, build | **PASS** |
+| End-to-end self-update from a published release | Download + apply | No release published yet | **NOT TESTED** |
+| Code signing | Signed binaries | No certificate available | **NOT TESTED** |
+
+The release workflow (`release.yml`) was not executed on GitHub Actions from this
+environment; it is validated by running the same `tools/release.ps1` locally.

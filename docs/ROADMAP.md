@@ -14,6 +14,17 @@
 - [x] Unit + Windows integration tests, CI.
 - [x] Experimental Process Loopback probe.
 
+## Distribution and updates
+
+- [x] Single source of truth for the version (`Directory.Build.props`).
+- [x] Self-contained single-file win-x64 release build.
+- [x] Inno Setup installer with Start Menu/desktop shortcuts and uninstaller.
+- [x] Portable ZIP with isolated configuration.
+- [x] Update checker (GitHub Releases, async, offline-safe).
+- [x] Standalone updater with SHA-256 verification and configuration backup.
+- [x] Developer scripts (`tools/dev-update.ps1`, `install.ps1`, `tools/release.ps1`).
+- [x] Release workflow on `v*` tags with checksums and release notes.
+
 ## Next
 
 - [ ] **Live routing via Process Loopback**: capture a process and re-render to
