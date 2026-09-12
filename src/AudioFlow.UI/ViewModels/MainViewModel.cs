@@ -9,6 +9,7 @@ using AudioFlow.Core;
 using AudioFlow.Core.Logging;
 using AudioFlow.Models;
 using AudioFlow.Rules;
+using AudioFlow.Routing;
 using AudioFlow.Session;
 using AudioFlow.UI.Localization;
 using AudioFlow.UI.Services;
@@ -26,6 +27,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly AudioSessionManager _sessionManager = new();
     private readonly WindowsAudioRoutingBackend _routingBackend = new();
     private readonly AudioFlowSessionManager _routingSession;
+    private readonly VirtualAudioDeviceManager _virtualDevices = new();
+    private readonly RoutingBackendRegistry _routingRegistry;
     private readonly AudioSessionMonitor _monitor;
     private readonly Dispatcher _dispatcher;
     private readonly SettingsStore _settingsStore = new();
@@ -44,6 +47,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _dispatcher = Dispatcher.CurrentDispatcher;
         _monitor = new AudioSessionMonitor(_deviceManager);
         _routingSession = new AudioFlowSessionManager(_routingBackend);
+        _routingRegistry = new RoutingBackendRegistry(_deviceManager, _virtualDevices);
 
         Languages = new ObservableCollection<LanguageOption>
         {
@@ -95,6 +99,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public string GuardianStatusText =>
         _guardianProcess is { HasExited: false } ? Loc.Get("GuardianRunning") : Loc.Get("GuardianNotRunning");
+
+    public string BackendNameText => _routingRegistry.SelectPreferred()?.Info.Name ?? "none";
+    public string BackendStatusText => _routingRegistry.SelectPreferred()?.Info.Status ?? "N/A";
+    public string VirtualEndpointText =>
+        _virtualDevices.GetVirtualRenderEndpoint()?.FriendlyName ?? Loc.Get("VirtualNotAvailable");
+    public string RoutingEngineNote => Loc.Get("RoutingEngineNote");
 
     private bool _closeCompletely;
     public bool CloseCompletely
@@ -1137,6 +1147,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _updateService?.Dispose();
         _deviceManager.DevicesChanged -= OnDevicesChanged;
         _monitor.Dispose();
+        _routingRegistry.Dispose();
         _deviceManager.Dispose();
         _sessionManager.Dispose();
         _routingBackend.Dispose();

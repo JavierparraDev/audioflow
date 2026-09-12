@@ -155,4 +155,8 @@
   <data name="GuardianRunning" xml:space="preserve"><value>Active</value></data>
   <data name="GuardianNotRunning" xml:space="preserve"><value>Not running</value></data>
   <data name="RecoveryLabel" xml:space="preserve"><value>Recovery</value></data>
+  <data name="RoutingBackendLabel" xml:space="preserve"><value>Routing backend</value></data>
+  <data name="VirtualEndpointLabel" xml:space="preserve"><value>Virtual endpoint</value></data>
+  <data name="VirtualNotAvailable" xml:space="preserve"><value>Not available</value></data>
+  <data name="RoutingEngineNote" xml:space="preserve"><value>Policy routing applies on stream restart. Live, duplication-free routing requires a virtual audio endpoint.</value></data>
 </root>

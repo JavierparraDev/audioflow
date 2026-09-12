@@ -155,4 +155,8 @@
   <data name="GuardianRunning" xml:space="preserve"><value>Activo</value></data>
   <data name="GuardianNotRunning" xml:space="preserve"><value>No activo</value></data>
   <data name="RecoveryLabel" xml:space="preserve"><value>Recuperación</value></data>
+  <data name="RoutingBackendLabel" xml:space="preserve"><value>Backend de routing</value></data>
+  <data name="VirtualEndpointLabel" xml:space="preserve"><value>Endpoint virtual</value></data>
+  <data name="VirtualNotAvailable" xml:space="preserve"><value>No disponible</value></data>
+  <data name="RoutingEngineNote" xml:space="preserve"><value>El routing por política se aplica al reiniciar el stream. El routing live sin duplicación requiere un endpoint de audio virtual.</value></data>
 </root>
