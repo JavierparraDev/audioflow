@@ -28,4 +28,17 @@ public interface IAudioRoutingBackend
 
     /// <summary>Mutes or unmutes every session of a process. Returns the number changed.</summary>
     int SetProcessMute(uint processId, bool mute);
+
+    /// <summary>
+    /// Captures the current Windows per-application audio policy state as an
+    /// opaque string, or null when unsupported. Captured before any change so it
+    /// can be restored exactly.
+    /// </summary>
+    string? CapturePolicyState();
+
+    /// <summary>
+    /// Restores the captured policy state for the given executables. Subkeys that
+    /// did not exist before are deleted. Returns true when the state is clean.
+    /// </summary>
+    bool RevertPolicyState(string? snapshot, IReadOnlyList<string> executableNames);
 }

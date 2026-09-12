@@ -29,6 +29,8 @@ public class AudioFlowSessionTests : IDisposable
         public HashSet<string> ExistingDevices { get; } = new();
         public List<(uint Pid, bool Mute)> MuteCalls { get; } = new();
         public Dictionary<uint, string> SetCalls { get; } = new();
+        public string? PolicyState { get; set; }
+        public List<(string? Snapshot, List<string> Names)> RevertCalls { get; } = new();
 
         public string? GetPersistedEndpoint(uint processId, out string? error)
         {
@@ -55,6 +57,14 @@ public class AudioFlowSessionTests : IDisposable
         {
             MuteCalls.Add((processId, mute));
             return 1;
+        }
+
+        public string? CapturePolicyState() => PolicyState;
+
+        public bool RevertPolicyState(string? snapshot, IReadOnlyList<string> executableNames)
+        {
+            RevertCalls.Add((snapshot, executableNames.ToList()));
+            return true;
         }
     }
 
@@ -371,5 +381,51 @@ public class AudioFlowSessionTests : IDisposable
         var result = manager.RestoreApplication("exe:notmodified.exe");
 
         Assert.Equal(RestoreStatus.Skipped, result.Status);
+    }
+
+    [Fact]
+    public void StartSession_CapturesPolicyState()
+    {
+        var backend = new FakeBackend { PolicyState = "{\"keys\":[]}" };
+        var manager = NewManager(backend);
+
+        manager.StartSession();
+
+        Assert.Equal("{\"keys\":[]}", manager.Snapshot!.PolicyState);
+    }
+
+    [Fact]
+    public void EndSession_WithPolicyState_CleansUpEvenWhenAppNotRunning()
+    {
+        var backend = new FakeBackend { PolicyState = "{\"keys\":[]}" };
+        backend.Processes.Add(new SessionProcessInfo(100, Identity("exe:spotify.exe", "Spotify.exe")));
+
+        var manager = NewManager(backend);
+        manager.StartSession();
+        manager.ApplyRoute(Identity("exe:spotify.exe", "Spotify.exe"), 100, "DEV_SPEAKERS", out _);
+
+        backend.Processes.Clear(); // app closed before exit
+
+        var report = manager.EndSession();
+
+        Assert.True(report.Success);
+        Assert.False(File.Exists(_markerPath));
+        Assert.Equal(SessionState.Inactive, manager.State);
+        Assert.Contains(backend.RevertCalls, c => c.Names.Contains("Spotify.exe"));
+    }
+
+    [Fact]
+    public void HandleDeviceLost_RevertsPolicyStateForAffectedApps()
+    {
+        var backend = new FakeBackend { DefaultDevice = "DEV_DEFAULT", PolicyState = "{\"keys\":[]}" };
+        backend.Processes.Add(new SessionProcessInfo(100, Identity("exe:spotify.exe", "Spotify.exe")));
+
+        var manager = NewManager(backend);
+        manager.StartSession();
+        manager.ApplyRoute(Identity("exe:spotify.exe", "Spotify.exe"), 100, "DEV_SPEAKERS", out _);
+
+        manager.HandleDeviceLost("DEV_SPEAKERS");
+
+        Assert.Contains(backend.RevertCalls, c => c.Names.Contains("Spotify.exe"));
     }
 }

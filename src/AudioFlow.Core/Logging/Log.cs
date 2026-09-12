@@ -38,6 +38,19 @@ public static class Log
         }
     }
 
+    /// <summary>
+    /// Stops writing to the log file and releases it so it can be deleted. The
+    /// console keeps working. Safe to call multiple times.
+    /// </summary>
+    public static void StopFile()
+    {
+        lock (Sync)
+        {
+            _fileWriter?.Dispose();
+            _fileWriter = null;
+        }
+    }
+
     public static void Debug(string message) => Write(LogLevel.Debug, message);
     public static void Info(string message) => Write(LogLevel.Info, message);
     public static void Warn(string message) => Write(LogLevel.Warn, message);

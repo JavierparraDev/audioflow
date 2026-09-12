@@ -47,7 +47,7 @@ AudioFlow.Applications
 
 AudioFlow.Rules
   ├── RuleEngine              IF app tiene regla THEN endpoint ELSE default
-  └── RuleStorage             Persistencia JSON
+  └── RuleStorage             En memoria (efímero): nunca escribe a disco
 
 AudioFlow.Models
   AudioDevice / AudioSessionInfo / AudioRule / AudioRuleSet
@@ -74,21 +74,18 @@ Sesión detectada
    → AudioRoutingManager.Apply
 ```
 
-## 5. Persistencia
+## 5. Persistencia (efímera)
 
-`%APPDATA%\AudioFlow\rules.json`
+AudioFlow **no persiste reglas**. Mientras la aplicación está abierta, las
+reglas viven en memoria; al cerrarse se descartan. `RuleStorage` conserva la
+ruta `%APPDATA%\AudioFlow\rules.json` únicamente para borrar archivos creados
+por versiones anteriores.
 
-```json
-{
-  "rules": [
-    { "ruleId": "...", "applicationIdentifier": "spotify.exe",
-      "applicationName": "Spotify", "outputDeviceId": "{0.0.0...}",
-      "enabled": true }
-  ],
-  "defaultOutputDeviceId": "{0.0.1...}",
-  "audioLockEnabled": true
-}
-```
+Los cambios reales de audio se escriben en el registro de Windows
+(`HKCU\...\LowRegistry\Audio\PolicyConfig\PropertyStore`). `AudioFlow.Session`
+captura ese subárbol completo **antes** de aplicar nada y lo restaura exactamente
+al cerrar, de modo que no queda ningún cambio cuando la app no está en ejecución.
+La captura/restauración vive en `AudioPolicyRegistryGuard`.
 
 ## 6. Decisiones
 
@@ -106,7 +103,7 @@ src/
 ├── AudioFlow.Models          Modelos de dominio (net8.0)
 ├── AudioFlow.Applications    ProcessManager, ApplicationIdentifier
 ├── AudioFlow.Core            Dispositivos, sesiones, routing, verificación
-├── AudioFlow.Rules           RuleEngine, RuleStorage (JSON atómico)
+├── AudioFlow.Rules           RuleEngine, RuleStorage (en memoria, efímero)
 ├── AudioFlow.Configuration   Rutas, settings, migraciones (instalado/portable)
 ├── AudioFlow.Updates         Versiones, GitHub Releases, checksums
 ├── AudioFlow.Session         Snapshot, restore, crash recovery
@@ -128,6 +125,9 @@ tests/
 - `AudioRoutingManager` - aplica y verifica el endpoint persistido.
 - `AudioOutputVerifier` - mide el nivel real de audio por endpoint.
 - `WindowsAudio/AudioPolicyConfig` - interop de `IAudioPolicyConfigFactory`.
+- `WindowsAudio/AudioPolicyRegistryGuard` - snapshot y restauración exacta del
+  registro de audio por aplicación.
+- `Windows/LegacyStartupRegistry` - elimina el autoarranque de versiones previas.
 
 ### UI
 

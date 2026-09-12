@@ -57,7 +57,7 @@ if ($Clean) {
 
     Remove-Item $installDir -Recurse -Force
     if (Test-Path $startMenu) { Remove-Item $startMenu -Force }
-    Write-Host "Removed $installDir. Your rules in %APPDATA%\AudioFlow were kept." -ForegroundColor Green
+    Write-Host "Removed $installDir." -ForegroundColor Green
     return
 }
 

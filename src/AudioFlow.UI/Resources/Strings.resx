@@ -109,7 +109,6 @@
   <data name="SettingsGeneral" xml:space="preserve"><value>General</value></data>
   <data name="SettingsStartup" xml:space="preserve"><value>Startup</value></data>
   <data name="SettingsUpdates" xml:space="preserve"><value>Updates</value></data>
-  <data name="StartWithWindows" xml:space="preserve"><value>Start AudioFlow with Windows</value></data>
   <data name="CheckForUpdatesOnStartup" xml:space="preserve"><value>Check for updates on startup</value></data>
   <data name="BtnCheckForUpdates" xml:space="preserve"><value>Check for updates</value></data>
   <data name="BtnUpdateNow" xml:space="preserve"><value>Update now</value></data>

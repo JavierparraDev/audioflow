@@ -29,101 +29,57 @@ public class RuleStorageTests : IDisposable
     }
 
     [Fact]
-    public void SaveThenLoad_RoundTripsRules()
+    public void Save_DoesNotCreateFile()
     {
         var storage = new RuleStorage(_file);
-        var set = new AudioRuleSet
-        {
-            DefaultOutputDeviceId = "DEV_HEADPHONES",
-            Rules =
-            {
-                new AudioRule
-                {
-                    ApplicationIdentifier = "exe:spotify.exe",
-                    ApplicationName = "Spotify",
-                    OutputDeviceId = "DEV_SPEAKERS"
-                }
-            }
-        };
 
-        Assert.True(storage.Save(set));
+        Assert.True(storage.Save(new AudioRuleSet { DefaultOutputDeviceId = "DEV_HEADPHONES" }));
 
-        var loaded = new RuleStorage(_file).Load();
-
-        Assert.Equal("DEV_HEADPHONES", loaded.DefaultOutputDeviceId);
-        Assert.Single(loaded.Rules);
-        Assert.Equal("exe:spotify.exe", loaded.Rules[0].ApplicationIdentifier);
-        Assert.Equal("DEV_SPEAKERS", loaded.Rules[0].OutputDeviceId);
+        Assert.False(File.Exists(_file));
+        Assert.False(File.Exists(_file + ".tmp"));
+        Assert.False(File.Exists(_file + ".bak"));
     }
 
     [Fact]
-    public void MissingFile_ReturnsEmptySet()
+    public void Load_AlwaysReturnsEmptySet_EvenWhenLegacyFileExists()
     {
-        var storage = new RuleStorage(Path.Combine(_dir, "does-not-exist.json"));
+        File.WriteAllText(_file, """
+            {
+              "defaultOutputDeviceId": "DEV_HEADPHONES",
+              "rules": [
+                { "applicationIdentifier": "exe:spotify.exe", "outputDeviceId": "DEV_SPEAKERS" }
+              ]
+            }
+            """);
 
-        var loaded = storage.Load();
+        var loaded = new RuleStorage(_file).Load();
 
         Assert.NotNull(loaded);
         Assert.Empty(loaded.Rules);
-        Assert.Null(storage.LastError);
+        Assert.Null(loaded.DefaultOutputDeviceId);
+        Assert.Null(new RuleStorage(_file).LastError);
     }
 
     [Fact]
-    public void EmptyFile_ReturnsEmptySet()
+    public void DeleteLegacyFiles_RemovesRulesAndSiblings()
     {
-        File.WriteAllText(_file, string.Empty);
+        File.WriteAllText(_file, "{}");
+        File.WriteAllText(_file + ".tmp", "{}");
+        File.WriteAllText(_file + ".bak", "{}");
 
-        var loaded = new RuleStorage(_file).Load();
+        var removed = new RuleStorage(_file).DeleteLegacyFiles();
 
-        Assert.Empty(loaded.Rules);
-    }
-
-    [Fact]
-    public void InvalidJson_ReturnsEmptySetAndRecordsError()
-    {
-        File.WriteAllText(_file, "{ this is not json ]");
-
-        var storage = new RuleStorage(_file);
-        var loaded = storage.Load();
-
-        Assert.Empty(loaded.Rules);
-        Assert.NotNull(storage.LastError);
-    }
-
-    [Fact]
-    public void CorruptJson_CanBeRecoveredBySaving()
-    {
-        File.WriteAllText(_file, "###corrupt###");
-
-        var storage = new RuleStorage(_file);
-        storage.Load();
-
-        var recovered = new AudioRuleSet { DefaultOutputDeviceId = "DEV_HEADPHONES" };
-        Assert.True(storage.Save(recovered));
-
-        var loaded = new RuleStorage(_file).Load();
-        Assert.Equal("DEV_HEADPHONES", loaded.DefaultOutputDeviceId);
-    }
-
-    [Fact]
-    public void AtomicSave_LeavesNoTempFile()
-    {
-        var storage = new RuleStorage(_file);
-        storage.Save(new AudioRuleSet { DefaultOutputDeviceId = "A" });
-        storage.Save(new AudioRuleSet { DefaultOutputDeviceId = "B" });
-
-        Assert.True(File.Exists(_file));
+        Assert.Equal(3, removed);
+        Assert.False(File.Exists(_file));
         Assert.False(File.Exists(_file + ".tmp"));
-        Assert.Equal("B", new RuleStorage(_file).Load().DefaultOutputDeviceId);
+        Assert.False(File.Exists(_file + ".bak"));
     }
 
     [Fact]
-    public void Save_CreatesMissingDirectory()
+    public void DeleteLegacyFiles_MissingFiles_ReturnsZero()
     {
-        var nested = Path.Combine(_dir, "nested", "deep", "rules.json");
-        var storage = new RuleStorage(nested);
+        var removed = new RuleStorage(Path.Combine(_dir, "does-not-exist.json")).DeleteLegacyFiles();
 
-        Assert.True(storage.Save(new AudioRuleSet { DefaultOutputDeviceId = "X" }));
-        Assert.True(File.Exists(nested));
+        Assert.Equal(0, removed);
     }
 }

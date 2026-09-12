@@ -25,12 +25,15 @@ replace) and records the session snapshot, including the owning PID.
 1. Detect `session.json`.
 2. Read the snapshot.
 3. Restore every recorded application (identity-matched, not PID-only).
-4. Verify by reading the persisted endpoint back.
-5. Delete the marker only if every application was restored.
-6. **Do not re-activate routing** — the user must enable it again.
+4. Restore the captured audio registry state exactly (deleting entries AudioFlow
+   created), so applications that are no longer running are cleaned too.
+5. Verify by reading the persisted endpoint back.
+6. Delete the marker once the registry state is clean.
+7. **Do not re-activate routing** — the user must enable it again.
 
-If an application was not running, it is reported `Failed` and the marker is
-kept so the next launch (or `audioflow restore`) retries.
+Because the registry restore does not depend on the application being alive, a
+crashed session leaves no audio change behind even if the app was closed before
+AudioFlow exited.
 
 ## CLI
 

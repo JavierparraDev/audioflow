@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using AudioFlow.Configuration;
 using AudioFlow.Core;
 using AudioFlow.Core.Logging;
+using AudioFlow.Core.Windows;
+using AudioFlow.Core.WindowsAudio;
 using AudioFlow.Models;
 using AudioFlow.Rules;
 using AudioFlow.Routing;
@@ -187,23 +189,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private bool _startWithWindows;
-    public bool StartWithWindows
-    {
-        get => _startWithWindows;
-        set
-        {
-            if (!SetProperty(ref _startWithWindows, value))
-            {
-                return;
-            }
-
-            StartupRegistration.SetEnabled(value);
-            _settings.StartWithWindows = value;
-            SaveSettings();
-        }
-    }
-
     private LanguageOption _selectedLanguage;
     public LanguageOption SelectedLanguage
     {
@@ -325,6 +310,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         try
         {
+            // Remove logs from a previous run (e.g. after a crash) so no stale
+            // record survives, then start a fresh log for this session.
+            UserDataCleanup.DeleteLogs();
             Directory.CreateDirectory(AppPaths.LogsDirectory);
             Log.UseFile(Path.Combine(AppPaths.LogsDirectory, "audioflow.log"));
         }
@@ -352,6 +340,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Log.Error(ex, "Crash recovery failed");
         }
 
+        // One-time migration: remove rules and audio changes left by earlier
+        // versions, plus any "start with Windows" entry. AudioFlow must leave no
+        // trace while it is not running.
+        RemoveLegacyLeftovers();
+
         OnPropertyChanged(nameof(SessionStateText));
 
         RefreshDevices();
@@ -366,6 +359,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshSessions();
     }
 
+    /// <summary>
+    /// Removes records created by earlier AudioFlow versions so that a fresh
+    /// install/launch starts completely clean.
+    /// </summary>
+    private void RemoveLegacyLeftovers()
+    {
+        try
+        {
+            // If pre-established rules exist, undo the audio changes they implied.
+            if (File.Exists(AppPaths.RulesFile))
+            {
+                var executables = UserDataCleanup.CollectLegacyExecutables();
+                AudioPolicyRegistryGuard.RemoveEntriesForExecutables(executables);
+            }
+
+            _ruleEngine.DeletePersistedRules();
+            LegacyStartupRegistry.Remove();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Legacy cleanup failed: {ex.Message}");
+        }
+    }
+
     private void LoadSettingsAndUpdates()
     {
         _settings = _settingsStore.Load();
@@ -376,9 +393,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                        ?? Languages[0];
         _selectedLanguage = language;
         Loc.SetLanguage(language.Code);
-
-        _startWithWindows = StartupRegistration.IsEnabled();
-        OnPropertyChanged(nameof(StartWithWindows));
 
         _checkForUpdatesEnabled = _settings.CheckForUpdates;
         OnPropertyChanged(nameof(CheckForUpdatesEnabled));
@@ -1152,9 +1166,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _sessionManager.Dispose();
         _routingBackend.Dispose();
 
+        // Stop the guardian before removing logs so it cannot recreate them.
         try
         {
+            if (_guardianProcess is { HasExited: false })
+            {
+                _guardianProcess.Kill(entireProcessTree: true);
+                _guardianProcess.WaitForExit(2000);
+            }
+
             _guardianProcess?.Dispose();
+        }
+        catch
+        {
+            // best effort
+        }
+
+        // Leave nothing behind: no session marker, no rules, no logs, no startup entry.
+        try
+        {
+            Log.StopFile();
+            _ruleEngine.DeletePersistedRules();
+            UserDataCleanup.DeleteSessionFiles();
+            UserDataCleanup.DeleteLogs();
+            LegacyStartupRegistry.Remove();
         }
         catch
         {

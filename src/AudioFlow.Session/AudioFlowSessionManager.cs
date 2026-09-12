@@ -48,7 +48,8 @@ public sealed class AudioFlowSessionManager
             _snapshot = new AudioRoutingSnapshot
             {
                 OwnerProcessId = (uint)Environment.ProcessId,
-                DefaultRenderDeviceId = _backend.GetDefaultRenderDeviceId()
+                DefaultRenderDeviceId = _backend.GetDefaultRenderDeviceId(),
+                PolicyState = _backend.CapturePolicyState()
             };
 
             if (!_marker.Write(_snapshot))
@@ -159,9 +160,14 @@ public sealed class AudioFlowSessionManager
                 _backend.SetProcessMute(pid, false);
             }
 
+            // The policy-store restore is authoritative: it cleans up even when an
+            // application is not running, so no per-app change is left behind.
+            var policyCaptured = !string.IsNullOrEmpty(snapshot.PolicyState);
+            var policyClean = _backend.RevertPolicyState(snapshot.PolicyState, ExecutableNames(snapshot.Applications));
+
             var report = new RestoreReport(
                 snapshot.SessionId,
-                remaining.Count == 0,
+                policyCaptured ? policyClean : remaining.Count == 0,
                 results,
                 DateTimeOffset.UtcNow);
 
@@ -178,7 +184,10 @@ public sealed class AudioFlowSessionManager
             else
             {
                 snapshot.State = "active";
-                snapshot.Applications = remaining;
+                // When the policy restore failed, keep the full application list so
+                // the retry on the next launch still knows which executables to
+                // clean up.
+                snapshot.Applications = policyCaptured ? snapshot.Applications : remaining;
                 snapshot.MutedProcessIds.Clear();
                 _marker.Write(snapshot);
                 State = SessionState.Stale;
@@ -212,7 +221,9 @@ public sealed class AudioFlowSessionManager
             }
 
             var result = RestoreSingle(app);
-            if (result.Status != RestoreStatus.Failed)
+            var policyClean = _backend.RevertPolicyState(snapshot.PolicyState, ExecutableNames(new[] { app }));
+
+            if (result.Status != RestoreStatus.Failed && policyClean)
             {
                 snapshot.Applications.Remove(app);
             }
@@ -250,11 +261,18 @@ public sealed class AudioFlowSessionManager
             var results = new List<ApplicationRestoreResult>();
             foreach (var app in affected)
             {
-                var result = RestoreSingle(app);
-                results.Add(result);
-                if (result.Status != RestoreStatus.Failed)
+                results.Add(RestoreSingle(app));
+            }
+
+            // Restore the policy-store entries of the affected apps even if they
+            // are not running, so a device loss cannot leave changes behind.
+            var policyClean = _backend.RevertPolicyState(snapshot.PolicyState, ExecutableNames(affected));
+
+            for (var i = 0; i < affected.Count; i++)
+            {
+                if (results[i].Status != RestoreStatus.Failed && policyClean)
                 {
-                    snapshot.Applications.Remove(app);
+                    snapshot.Applications.Remove(affected[i]);
                 }
             }
 
@@ -363,6 +381,14 @@ public sealed class AudioFlowSessionManager
 
         return entry;
     }
+
+    private static IReadOnlyList<string> ExecutableNames(IEnumerable<AudioApplicationSnapshot> applications) =>
+        applications
+            .Select(a => a.ExecutableName)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n => n!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     private static uint? ResolveLiveProcess(AudioApplicationSnapshot app, IReadOnlyList<SessionProcessInfo> live)
     {

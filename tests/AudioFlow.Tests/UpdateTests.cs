@@ -255,14 +255,14 @@ public class ConfigurationTests : IDisposable
     public void SettingsStore_RoundTrips()
     {
         var store = new SettingsStore(_file);
-        var settings = new AppSettings { Language = "es", CheckForUpdates = false, StartWithWindows = true };
+        var settings = new AppSettings { Language = "es", CheckForUpdates = false, CloseCompletely = true };
 
         Assert.True(store.Save(settings));
 
         var loaded = new SettingsStore(_file).Load();
         Assert.Equal("es", loaded.Language);
         Assert.False(loaded.CheckForUpdates);
-        Assert.True(loaded.StartWithWindows);
+        Assert.True(loaded.CloseCompletely);
     }
 
     [Fact]

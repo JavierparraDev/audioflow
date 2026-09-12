@@ -622,8 +622,7 @@
                         <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="{loc:Tr SettingsStartup}" Style="{StaticResource SectionTitle}" />
-                                <CheckBox Content="{loc:Tr StartWithWindows}" IsChecked="{Binding StartWithWindows}" Margin="0,12,0,0" />
-                                <CheckBox Content="{loc:Tr CheckForUpdatesOnStartup}" IsChecked="{Binding CheckForUpdatesEnabled}" Margin="0,8,0,0" />
+                                <CheckBox Content="{loc:Tr CheckForUpdatesOnStartup}" IsChecked="{Binding CheckForUpdatesEnabled}" Margin="0,12,0,0" />
                                 <CheckBox Content="{loc:Tr CloseCompletely}" IsChecked="{Binding CloseCompletely}" Margin="0,8,0,0" />
                             </StackPanel>
                         </Border>

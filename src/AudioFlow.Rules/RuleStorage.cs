@@ -1,100 +1,71 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using AudioFlow.Configuration;
 using AudioFlow.Models;
 
 namespace AudioFlow.Rules;
 
 /// <summary>
-/// Persists <see cref="AudioRuleSet"/> as JSON under
-/// %APPDATA%\AudioFlow\rules.json (on Windows) so rules survive restarts.
-/// Corrupt or unreadable files never crash the app: a fresh rule set is used.
+/// In-memory rule storage. AudioFlow is session-only: rules are never written to
+/// disk, so nothing survives after the application closes. The legacy file path
+/// is kept only so any rules.json left by earlier versions can be deleted.
 /// </summary>
 public sealed class RuleStorage
 {
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new JsonStringEnumConverter() }
-    };
-
     public RuleStorage(string? filePath = null) => FilePath = filePath ?? DefaultPath();
 
     public string FilePath { get; }
 
-    /// <summary>Error from the last load/save operation, if any.</summary>
+    /// <summary>Error from the last load/save/delete operation, if any.</summary>
     public string? LastError { get; private set; }
 
     public static string DefaultPath()
     {
-        // User rules live in %APPDATA%\AudioFlow (or the portable data folder),
-        // never inside the installation directory.
+        // Legacy location. Rules are no longer persisted here; it is only used to
+        // clean up files created by previous versions.
         return AppPaths.RulesFile;
     }
 
+    /// <summary>Always returns a fresh, empty rule set: nothing is persisted.</summary>
     public AudioRuleSet Load()
     {
         LastError = null;
-
-        try
-        {
-            if (!File.Exists(FilePath))
-            {
-                return new AudioRuleSet();
-            }
-
-            var json = File.ReadAllText(FilePath);
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return new AudioRuleSet();
-            }
-
-            return JsonSerializer.Deserialize<AudioRuleSet>(json, Options) ?? new AudioRuleSet();
-        }
-        catch (Exception ex)
-        {
-            LastError = $"Could not load rules: {ex.Message}";
-            return new AudioRuleSet();
-        }
+        return new AudioRuleSet();
     }
 
+    /// <summary>
+    /// No-op. Rules live in memory for the current session only; this never
+    /// creates or modifies a file.
+    /// </summary>
     public bool Save(AudioRuleSet ruleSet)
     {
         LastError = null;
+        return true;
+    }
 
-        try
+    /// <summary>
+    /// Deletes a legacy rules file and its temporary/backup siblings, if present.
+    /// Returns the number of files removed.
+    /// </summary>
+    public int DeleteLegacyFiles()
+    {
+        LastError = null;
+        var removed = 0;
+
+        foreach (var path in new[] { FilePath, FilePath + ".tmp", FilePath + ".bak" })
         {
-            var directory = Path.GetDirectoryName(FilePath);
-            if (!string.IsNullOrEmpty(directory))
+            try
             {
-                Directory.CreateDirectory(directory);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    removed++;
+                }
             }
-
-            var json = JsonSerializer.Serialize(ruleSet, Options);
-
-            // Atomic-ish save (R8): write to a temp file, then replace the real
-            // file. A crash mid-write cannot corrupt the existing rules.
-            var tempPath = FilePath + ".tmp";
-            File.WriteAllText(tempPath, json);
-
-            if (File.Exists(FilePath))
+            catch (Exception ex)
             {
-                var backupPath = FilePath + ".bak";
-                File.Replace(tempPath, FilePath, backupPath, ignoreMetadataErrors: true);
+                LastError = $"Could not delete {path}: {ex.Message}";
             }
-            else
-            {
-                File.Move(tempPath, FilePath);
-            }
-
-            return true;
         }
-        catch (Exception ex)
-        {
-            LastError = $"Could not save rules: {ex.Message}";
-            return false;
-        }
+
+        return removed;
     }
 }

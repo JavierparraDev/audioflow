@@ -24,9 +24,6 @@ public sealed class AppSettings
     /// <summary>A version the user chose to skip.</summary>
     public string? SkippedVersion { get; set; }
 
-    /// <summary>Start AudioFlow with Windows (HKCU Run key). Off by default.</summary>
-    public bool StartWithWindows { get; set; }
-
     /// <summary>When true, closing the window stops the session and exits. Off by default (minimize to tray).</summary>
     public bool CloseCompletely { get; set; }
 }

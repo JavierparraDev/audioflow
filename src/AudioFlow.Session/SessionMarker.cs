@@ -77,16 +77,21 @@ public sealed class SessionMarker
 
     public void Delete()
     {
-        try
+        // Remove the marker and its atomic-write siblings so no session record
+        // is left behind once a session ends cleanly.
+        foreach (var path in new[] { FilePath, FilePath + ".bak", FilePath + ".tmp" })
         {
-            if (File.Exists(FilePath))
+            try
             {
-                File.Delete(FilePath);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
             }
-        }
-        catch
-        {
-            // best effort
+            catch
+            {
+                // best effort
+            }
         }
     }
 }

@@ -28,9 +28,13 @@ public sealed class RuleEngine
 
     public AudioRuleSet Rules { get; }
 
-    public string RulesFilePath => _storage.FilePath;
+    /// <summary>Rules are session-only; this path is only used to clean legacy files.</summary>
+    public string LegacyRulesFilePath => _storage.FilePath;
 
     public string? LastStorageError => _storage.LastError;
+
+    /// <summary>Deletes any rules.json left by earlier versions. Returns files removed.</summary>
+    public int DeletePersistedRules() => _storage.DeleteLegacyFiles();
 
     public AudioRule? FindRule(string applicationKey) =>
         Rules.Rules.FirstOrDefault(r =>

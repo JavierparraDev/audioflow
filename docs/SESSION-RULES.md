@@ -1,23 +1,37 @@
 # Session Rules
 
-AudioFlow's routing is **session-scoped**. When AudioFlow closes, Windows returns
-to its normal audio behavior.
+AudioFlow's routing is **session-scoped** and **fully ephemeral**. When AudioFlow
+closes, Windows returns to its normal audio behavior and nothing about the
+session remains: no rules file, no session file, no logs and no audio registry
+change.
 
 ```
-AudioFlow OPEN   -> rules may be active
-AudioFlow CLOSED -> Windows audio is normal
+AudioFlow OPEN   -> rules live in memory and may be active
+AudioFlow CLOSED -> Windows audio is normal; no file or registry change remains
 AudioFlow CRASH  -> next startup restores Windows audio first
 ```
 
 ## How it works
 
 1. `AudioFlowSessionManager.StartSession()` captures the system default render
-   device and writes an atomic recovery marker (`session.json`) **before any
-   change**.
+   device and a full snapshot of the per-application audio registry
+   (`PolicyConfig\PropertyStore`) and writes an atomic recovery marker
+   (`session.json`) **before any change**.
 2. `ApplyRoute(identity, pid, target)` captures the app's original persisted
    endpoint (once) and persists the snapshot **before** applying the new one.
 3. `EndSession()` restores every recorded app, unmutes recorded processes,
-   verifies, and deletes the marker.
+   restores the captured registry state exactly (deleting entries AudioFlow
+   created), and deletes the marker.
+
+## Ephemeral guarantees
+
+- **No `rules.json`.** Rules live in memory only; the app never writes a rules
+  file. Legacy files from earlier versions are deleted on startup and exit.
+- **No leftover registry entries.** The `PropertyStore` subtree is restored to
+  the exact state captured at session start, even for applications that are no
+  longer running.
+- **No logs.** Log files are removed on a clean exit.
+- **No auto-start.** AudioFlow does not register itself to run at logon.
 
 ## Snapshot model
 

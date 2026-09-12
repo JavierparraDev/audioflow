@@ -1,5 +1,8 @@
 using AudioFlow.Configuration;
 using AudioFlow.Core;
+using AudioFlow.Core.Logging;
+using AudioFlow.Core.Windows;
+using AudioFlow.Core.WindowsAudio;
 using AudioFlow.Models;
 using AudioFlow.Rules;
 using AudioFlow.Updates;
@@ -26,6 +29,7 @@ internal static class Commands
         Console.WriteLine("  audioflow apply [--duration N]       Apply rules for a temporary session (restores on exit)");
         Console.WriteLine("  audioflow session                    Show the AudioFlow session state (ACTIVE/INACTIVE/STALE)");
         Console.WriteLine("  audioflow restore                    Restore Windows audio changed by AudioFlow");
+        Console.WriteLine("  audioflow cleanup                    Remove every rule, log and registry change left behind");
         Console.WriteLine("  audioflow diagnostics                Session/guardian/devices/routes status");
         Console.WriteLine("  audioflow routing                    Routing backends and virtual endpoint status");
         Console.WriteLine("  audioflow routing-test <src> <tgt> <s>  Verify endpoint-loopback capture -> render");
@@ -38,7 +42,8 @@ internal static class Commands
         Console.WriteLine("  audioflow live-route <pid> <dev> <s> Capture a process and render it to a device");
         Console.WriteLine("  audioflow version                    Show the application version");
         Console.WriteLine("  audioflow update [--check]           Check GitHub Releases for updates");
-        Console.WriteLine("  audioflow set-default <device>       Set the default output device");
+        Console.WriteLine("  audioflow set-default <device>       Set the AudioFlow default output device");
+        Console.WriteLine("  audioflow set-system-default <device>  Set the Windows system default output device");
         Console.WriteLine("  audioflow set-rule <app> <device>    Route an application to a device");
         Console.WriteLine("  audioflow remove-rule <app>          Delete an application rule");
         Console.WriteLine("  audioflow lock <device> <fallback> [app...]  Enable Audio Lock (fallback device required)");
@@ -195,7 +200,8 @@ internal static class Commands
         }
 
         Console.WriteLine();
-        Console.WriteLine($"File: {engine.RulesFilePath}");
+        Console.WriteLine("Rules are session-only: nothing is saved to disk and the audio");
+        Console.WriteLine("registry is restored when AudioFlow closes.");
         Footer();
         return 0;
     }
@@ -386,6 +392,42 @@ internal static class Commands
 
         PrintRestoreReport(recovery.Restore);
         return recovery.Restore.Success ? 0 : 1;
+    }
+
+    public static int Cleanup()
+    {
+        Console.WriteLine("AudioFlow cleanup");
+        Console.WriteLine("Removing every record AudioFlow may have left behind...");
+        Console.WriteLine();
+
+        // Collect the applications AudioFlow managed from any leftover state files
+        // BEFORE deleting them, and add the well-known ones as a safety net.
+        var executables = UserDataCleanup.CollectLegacyExecutables().ToList();
+        foreach (var known in new[] { "Spotify.exe", "fxsound.exe" })
+        {
+            if (!executables.Contains(known, StringComparer.OrdinalIgnoreCase))
+            {
+                executables.Add(known);
+            }
+        }
+
+        var removedKeys = AudioPolicyRegistryGuard.RemoveEntriesForExecutables(executables);
+        var removedStartup = LegacyStartupRegistry.Remove();
+
+        // Release the log file before deleting it.
+        Log.StopFile();
+
+        var removedFiles = UserDataCleanup.DeleteRuleFiles();
+        removedFiles += UserDataCleanup.DeleteSessionFiles();
+        removedFiles += UserDataCleanup.DeleteLogs();
+
+        Console.WriteLine($"  Audio registry entries removed : {removedKeys}");
+        Console.WriteLine($"  Startup entry removed          : {(removedStartup ? "yes" : "no")}");
+        Console.WriteLine($"  Files removed                  : {removedFiles}");
+        Console.WriteLine();
+        Console.WriteLine("CLEANUP SUCCESS");
+        Console.WriteLine("Windows audio is back to its normal behaviour.");
+        return 0;
     }
 
     private static void PrintRestoreReport(AudioFlow.Session.RestoreReport report)
@@ -961,6 +1003,33 @@ internal static class Commands
         var engine = new RuleEngine();
         engine.SetDefaultDevice(id);
         Console.WriteLine($"Default output set to: {name}");
+        return 0;
+    }
+
+    /// <summary>Sets the Windows system default output device (all roles).</summary>
+    public static int SetSystemDefault(string[] args)
+    {
+        if (args.Length < 1)
+        {
+            Console.WriteLine("Usage: audioflow set-system-default <device>");
+            return 1;
+        }
+
+        using var devices = new AudioDeviceManager();
+        var (id, name) = ResolveDeviceArg(args[0], devices.GetOutputDevices());
+        if (id is null)
+        {
+            Console.WriteLine($"Device not found: {args[0]}");
+            return 1;
+        }
+
+        if (!SystemAudioDefault.SetDefault(id, out var error))
+        {
+            Console.WriteLine($"Could not set the Windows default output: {error}");
+            return 1;
+        }
+
+        Console.WriteLine($"Windows default output set to: {name}");
         return 0;
     }
 

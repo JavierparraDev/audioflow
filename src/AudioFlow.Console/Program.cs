@@ -38,6 +38,8 @@ internal static class Program
                     return Commands.Session();
                 case "restore":
                     return Commands.Restore();
+                case "cleanup":
+                    return Commands.Cleanup();
                 case "diagnostics":
                     return Commands.Diagnostics();
                 case "routing":
@@ -60,6 +62,8 @@ internal static class Program
                     return Commands.LiveRoute(rest);
                 case "set-default":
                     return Commands.SetDefault(rest);
+                case "set-system-default":
+                    return Commands.SetSystemDefault(rest);
                 case "set-rule":
                     return Commands.SetRule(rest);
                 case "remove-rule":

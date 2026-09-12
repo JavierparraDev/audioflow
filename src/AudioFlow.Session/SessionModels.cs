@@ -70,6 +70,12 @@ public sealed class AudioRoutingSnapshot
     /// <summary>System default render device at session start (for fallback restore).</summary>
     public string? DefaultRenderDeviceId { get; set; }
 
+    /// <summary>
+    /// Opaque snapshot of the Windows per-application audio policy store captured
+    /// before any change. Used to leave the registry exactly as it was.
+    /// </summary>
+    public string? PolicyState { get; set; }
+
     public List<AudioApplicationSnapshot> Applications { get; set; } = new();
 
     /// <summary>Processes AudioFlow muted (must be unmuted on restore).</summary>

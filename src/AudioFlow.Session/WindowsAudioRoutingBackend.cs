@@ -1,5 +1,6 @@
 using AudioFlow.Applications;
 using AudioFlow.Core;
+using AudioFlow.Core.WindowsAudio;
 
 namespace AudioFlow.Session;
 
@@ -36,6 +37,11 @@ public sealed class WindowsAudioRoutingBackend : IAudioRoutingBackend, IDisposab
     }
 
     public int SetProcessMute(uint processId, bool mute) => _sessions.SetProcessMute(processId, mute);
+
+    public string? CapturePolicyState() => AudioPolicyRegistryGuard.Capture();
+
+    public bool RevertPolicyState(string? snapshot, IReadOnlyList<string> executableNames) =>
+        AudioPolicyRegistryGuard.Revert(snapshot, executableNames);
 
     public IReadOnlyList<SessionProcessInfo> GetActiveProcesses()
     {
