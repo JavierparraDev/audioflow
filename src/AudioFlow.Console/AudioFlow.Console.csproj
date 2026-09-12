@@ -16,6 +16,7 @@
     <ProjectReference Include="..\AudioFlow.Configuration\AudioFlow.Configuration.csproj" />
     <ProjectReference Include="..\AudioFlow.Updates\AudioFlow.Updates.csproj" />
     <ProjectReference Include="..\AudioFlow.LiveRouting\AudioFlow.LiveRouting.csproj" />
+    <ProjectReference Include="..\AudioFlow.Session\AudioFlow.Session.csproj" />
   </ItemGroup>
 
 </Project>

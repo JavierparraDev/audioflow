@@ -3,6 +3,9 @@ using AudioFlow.Core;
 using AudioFlow.Models;
 using AudioFlow.Rules;
 using AudioFlow.Updates;
+using AudioFlow.Applications;
+using AudioFlow.Session;
+using System.Diagnostics;
 
 namespace AudioFlow.ConsoleApp;
 
@@ -20,7 +23,9 @@ internal static class Commands
         Console.WriteLine("  audioflow monitor                    Watch sessions in real time (Phase 2A)");
         Console.WriteLine("  audioflow rules                      Show the saved rules (Phase 4)");
         Console.WriteLine("  audioflow plan                       Resolve active sessions to devices (Phase 4)");
-        Console.WriteLine("  audioflow apply                      Apply the rules to active sessions (Phase 5)");
+        Console.WriteLine("  audioflow apply [--duration N]       Apply rules for a temporary session (restores on exit)");
+        Console.WriteLine("  audioflow session                    Show the AudioFlow session state (ACTIVE/INACTIVE/STALE)");
+        Console.WriteLine("  audioflow restore                    Restore Windows audio changed by AudioFlow");
         Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
         Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
         Console.WriteLine("  audioflow loopback-probe <pid>       Probe Windows Process Loopback (experimental)");
@@ -234,29 +239,39 @@ internal static class Commands
         return 0;
     }
 
-    public static int Apply()
+    public static int Apply(string[] args)
     {
+        var duration = 0;
+        var durationIndex = Array.FindIndex(args, a => a.Equals("--duration", StringComparison.OrdinalIgnoreCase));
+        if (durationIndex >= 0 && durationIndex + 1 < args.Length)
+        {
+            int.TryParse(args[durationIndex + 1], out duration);
+        }
+
+        var noWait = args.Any(a => a.Equals("--no-wait", StringComparison.OrdinalIgnoreCase));
+
         using var devices = new AudioDeviceManager();
         var engine = new RuleEngine();
         var names = DeviceNames(devices);
         EnsureDefaultDevice(engine, devices);
 
-        using var sessions = new AudioSessionManager();
-        var routing = new AudioRoutingManager();
-        var list = sessions.GetSessions();
+        using var backend = new WindowsAudioRoutingBackend();
+        var sessionManager = new AudioFlowSessionManager(backend);
 
-        Banner("APPLY ROUTING");
-        Console.WriteLine("Sets the persisted output device for each application.");
-        Console.WriteLine("Windows applies it when the app (re)starts its audio stream.");
+        Banner("APPLY ROUTING (TEMPORARY SESSION)");
+        Console.WriteLine("Rules are applied for this session only.");
+        Console.WriteLine("Windows audio is restored when this command exits.");
         Console.WriteLine();
 
-        if (list.Count == 0)
+        if (!sessionManager.StartSession())
         {
-            Console.WriteLine("No active audio sessions.");
+            Console.WriteLine("Could not start a session.");
             Footer();
-            return 0;
+            return 2;
         }
 
+        using var sessions = new AudioSessionManager();
+        var list = sessions.GetSessions();
         var applied = 0;
         var failed = 0;
 
@@ -271,26 +286,126 @@ internal static class Commands
                 continue;
             }
 
-            var targetName = DescribeDevice(resolution.OutputDeviceId, names);
-            var result = routing.Apply(session.ProcessId, key, resolution.OutputDeviceId);
+            var identity = new ApplicationIdentity
+            {
+                Key = key,
+                Aumid = session.Aumid,
+                ExecutablePath = session.ProcessPath,
+                PathHash = session.ApplicationPathHash,
+                ProcessName = session.ProcessName,
+                DisplayName = session.ApplicationName
+            };
 
-            if (result.Success)
+            var targetName = DescribeDevice(resolution.OutputDeviceId, names);
+            if (sessionManager.ApplyRoute(identity, session.ProcessId, resolution.OutputDeviceId, out var error))
             {
                 applied++;
-                var verified = result.Verified ? " [verified]" : " [unverified]";
-                Console.WriteLine($"  [ok]   {key} (pid {session.ProcessId}) -> {targetName}{verified}");
+                Console.WriteLine($"  [ok]   {key} (pid {session.ProcessId}) -> {targetName}");
             }
             else
             {
                 failed++;
-                Console.WriteLine($"  [fail] {key} (pid {session.ProcessId}) -> {targetName}: {result.Error}");
+                Console.WriteLine($"  [fail] {key} (pid {session.ProcessId}) -> {targetName}: {error}");
             }
         }
 
         Console.WriteLine();
         Console.WriteLine($"Applied: {applied}   Failed: {failed}");
+
+        if (noWait)
+        {
+            Console.WriteLine("Restoring Windows audio (--no-wait)...");
+            PrintRestoreReport(sessionManager.EndSession());
+            Footer();
+            return failed == 0 ? 0 : 1;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("SESSION ACTIVE. Press Ctrl+C to stop and restore Windows audio.");
+        var stop = new ManualResetEventSlim(false);
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            stop.Set();
+        };
+
+        if (duration > 0)
+        {
+            stop.Wait(TimeSpan.FromSeconds(duration));
+        }
+        else
+        {
+            stop.Wait();
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Restoring Windows audio...");
+        var report = sessionManager.EndSession();
+        PrintRestoreReport(report);
         Footer();
-        return failed == 0 ? 0 : 1;
+        return report.Success ? 0 : 1;
+    }
+
+    public static int Session()
+    {
+        var marker = new SessionMarker();
+        var snapshot = marker.Read();
+
+        if (snapshot is null)
+        {
+            Console.WriteLine("INACTIVE");
+            Console.WriteLine("Windows audio is not being modified by AudioFlow.");
+            return 0;
+        }
+
+        var active = snapshot.OwnerProcessId != 0 && IsProcessAlive(snapshot.OwnerProcessId);
+        Console.WriteLine(active ? "ACTIVE" : "STALE");
+        Console.WriteLine($"  sessionId : {snapshot.SessionId}");
+        Console.WriteLine($"  createdAt : {snapshot.CreatedAt:u}");
+        Console.WriteLine($"  ownerPid  : {snapshot.OwnerProcessId} ({(active ? "running" : "not running")})");
+        Console.WriteLine($"  apps      : {snapshot.Applications.Count}");
+        return 0;
+    }
+
+    public static int Restore()
+    {
+        using var backend = new WindowsAudioRoutingBackend();
+        var manager = new AudioFlowSessionManager(backend);
+        var recovery = manager.RecoverIfNeeded();
+
+        if (!recovery.HadStaleSession)
+        {
+            Console.WriteLine("No AudioFlow session to restore. Windows audio is untouched.");
+            Console.WriteLine("RESTORE SUCCESS");
+            return 0;
+        }
+
+        PrintRestoreReport(recovery.Restore);
+        return recovery.Restore.Success ? 0 : 1;
+    }
+
+    private static void PrintRestoreReport(AudioFlow.Session.RestoreReport report)
+    {
+        foreach (var result in report.Results)
+        {
+            var detail = string.IsNullOrWhiteSpace(result.Reason) ? string.Empty : $" ({result.Reason})";
+            Console.WriteLine($"  [{result.Status}] {result.ApplicationIdentifier} -> {result.DeviceId ?? "-"}{detail}");
+        }
+
+        Console.WriteLine(report.Success ? "RESTORE SUCCESS" : "RESTORE FAILED");
+    }
+
+    private static bool IsProcessAlive(uint processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById((int)processId);
+            return !process.HasExited;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static int Verify(string[] args)
@@ -353,17 +468,22 @@ internal static class Commands
             return 1;
         }
 
-        var routing = new AudioRoutingManager();
-        var result = routing.Apply(pid, $"pid:{pid}", id);
+        using var backend = new WindowsAudioRoutingBackend();
+        var manager = new AudioFlowSessionManager(backend);
+        var identity = new ApplicationIdentifier().Identify(pid);
 
-        Console.WriteLine($"pid {pid} -> {name}");
-        Console.WriteLine($"success={result.Success} verified={result.Verified} status={result.Status}");
-        if (result.Error is not null)
+        Console.WriteLine($"pid {pid} -> {name} (temporary session)");
+        if (!manager.ApplyRoute(identity, pid, id, out var error))
         {
-            Console.WriteLine($"error: {result.Error}");
+            Console.WriteLine($"route failed: {error}");
+            manager.EndSession();
+            return 1;
         }
 
-        return result.Success ? 0 : 1;
+        Console.WriteLine("Route applied. Restoring immediately (diagnostic only)...");
+        var report = manager.EndSession();
+        PrintRestoreReport(report);
+        return report.Success ? 0 : 1;
     }
 
     public static int LoopbackProbe(string[] args)

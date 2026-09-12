@@ -33,7 +33,11 @@ internal static class Program
                 case "plan":
                     return Commands.Plan();
                 case "apply":
-                    return Commands.Apply();
+                    return Commands.Apply(rest);
+                case "session":
+                    return Commands.Session();
+                case "restore":
+                    return Commands.Restore();
                 case "verify":
                     return Commands.Verify(rest);
                 case "route-pid":
