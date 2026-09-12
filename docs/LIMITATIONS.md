@@ -73,3 +73,18 @@ interface (verified on Windows 11 build 26200). It does **not** yet:
   uninstall asks, and the default is to keep the data.
 - Portable mode stores data in `<app>\data`; do not mix a portable install with
   an installed one (different data locations).
+
+## 9. Live routing (Process Loopback) — duplication
+
+Phase 3 implemented and verified a real **Process Loopback capture → WASAPI
+render** pipeline (see [LIVE-ROUTING-REPORT.md](LIVE-ROUTING-REPORT.md)).
+
+- Capture works (per process, 265,041 frames / 6 s, peak 0.3554 measured).
+- Re-render to a chosen device works (target endpoint peak 0.2010 measured,
+  0 underruns, format negotiation 44100/16 → 48000/32).
+- **It duplicates audio**: the original output keeps playing. Suppressing it by
+  muting the session **also silences the capture** (measured peak 0.0000),
+  because the loopback tap is downstream of the per-session mute.
+- Therefore duplication-free live routing requires a **virtual audio endpoint**
+  (driver or virtual cable). See
+  [ARCHITECTURE-DECISION-LIVE-ROUTING.md](ARCHITECTURE-DECISION-LIVE-ROUTING.md).

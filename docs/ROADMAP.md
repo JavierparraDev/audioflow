@@ -25,6 +25,17 @@
 - [x] Developer scripts (`tools/dev-update.ps1`, `install.ps1`, `tools/release.ps1`).
 - [x] Release workflow on `v*` tags with checksums and release notes.
 
+## Live routing (Phase 3)
+
+- [x] Real Process Loopback capture with peak/RMS/frame metrics.
+- [x] WASAPI renderer with format negotiation (resampling).
+- [x] `AudioPipeline` with explicit states and `LiveRoutingManager`.
+- [x] Physical verification: capture PASS, render PASS, duplication FAIL.
+- [x] Architecture decision: a virtual audio endpoint is required.
+- [ ] Virtual audio endpoint (driver or virtual cable) integration.
+- [ ] Capture from the virtual endpoint and route to the target device.
+- [ ] Spotify/Chrome/simultaneous/disconnect physical tests.
+
 ## Next
 
 - [ ] **Live routing via Process Loopback**: capture a process and re-render to
