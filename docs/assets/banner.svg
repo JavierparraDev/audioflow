@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="AudioFlow - per-application audio routing for Windows">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B0D10"/>
+      <stop offset="0.55" stop-color="#10151E"/>
+      <stop offset="1" stop-color="#0B0D10"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4F8CFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#4F8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#38D39F" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#38D39F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8FBCFF"/>
+      <stop offset="1" stop-color="#4F8CFF"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A3550"/>
+      <stop offset="1" stop-color="#161B22"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#232C3B"/>
+      <stop offset="1" stop-color="#141922"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E8ECF1"/>
+      <stop offset="1" stop-color="#8FBCFF"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="1.4" cy="1.4" r="1.4" fill="#8FBCFF" opacity="0.09"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="400" rx="28" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1280" height="400" rx="28" fill="url(#dots)"/>
+  <rect x="1" y="1" width="1278" height="398" rx="27" fill="none" stroke="#22314A" stroke-width="2"/>
+
+  <ellipse cx="170" cy="205" rx="230" ry="195" fill="url(#glowA)"/>
+  <ellipse cx="1105" cy="200" rx="230" ry="195" fill="url(#glowB)"/>
+
+  <!-- headphones -->
+  <g transform="translate(60,80)" filter="url(#glow)">
+    <path d="M40 180 A92 92 0 0 1 224 180" fill="none" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M40 180 A92 92 0 0 1 224 180" fill="none" stroke="#0B0D10" stroke-width="5" stroke-linecap="round" opacity="0.30"/>
+    <rect x="18" y="170" width="46" height="86" rx="21" fill="url(#metal)" stroke="#4F8CFF" stroke-width="3"/>
+    <rect x="200" y="170" width="46" height="86" rx="21" fill="url(#metal)" stroke="#4F8CFF" stroke-width="3"/>
+    <rect x="30" y="186" width="22" height="54" rx="11" fill="#4F8CFF"/>
+    <rect x="212" y="186" width="22" height="54" rx="11" fill="#4F8CFF"/>
+    <circle cx="41" cy="213" r="4.5" fill="#E8ECF1"/>
+    <circle cx="223" cy="213" r="4.5" fill="#E8ECF1"/>
+  </g>
+  <!-- sound waves -->
+  <g fill="none" stroke="#38D39F" stroke-linecap="round" filter="url(#glow)">
+    <path d="M314 158 a40 40 0 0 1 0 56" stroke-width="6"/>
+    <path d="M338 138 a64 64 0 0 1 0 96" stroke-width="6" opacity="0.55"/>
+  </g>
+
+  <!-- controller -->
+  <g transform="translate(920,80)" filter="url(#glow)">
+    <circle cx="52" cy="142" r="52" fill="url(#pad)" stroke="#38D39F" stroke-width="3"/>
+    <circle cx="184" cy="142" r="52" fill="url(#pad)" stroke="#38D39F" stroke-width="3"/>
+    <rect x="8" y="86" width="220" height="112" rx="56" fill="url(#pad)" stroke="#38D39F" stroke-width="3"/>
+    <rect x="16" y="98" width="204" height="88" rx="44" fill="#141922"/>
+    <rect x="8" y="86" width="220" height="112" rx="56" fill="none" stroke="#38D39F" stroke-width="3"/>
+    <!-- d-pad -->
+    <rect x="52" y="118" width="16" height="48" rx="5" fill="#8FBCFF"/>
+    <rect x="36" y="134" width="48" height="16" rx="5" fill="#8FBCFF"/>
+    <!-- joystick -->
+    <circle cx="150" cy="142" r="19" fill="#1E242D" stroke="#4F8CFF" stroke-width="3"/>
+    <circle cx="150" cy="142" r="7.5" fill="#4F8CFF"/>
+    <!-- buttons -->
+    <circle cx="196" cy="120" r="8.5" fill="#38D39F"/>
+    <circle cx="213" cy="142" r="8.5" fill="#F5B84B"/>
+    <circle cx="179" cy="142" r="8.5" fill="#8FBCFF"/>
+    <circle cx="196" cy="164" r="8.5" fill="#E8ECF1"/>
+  </g>
+
+  <!-- title -->
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" text-anchor="middle">
+    <text x="640" y="176" font-size="84" font-weight="700" letter-spacing="0.5" fill="url(#title)">AudioFlow</text>
+    <text x="640" y="218" font-size="24" font-weight="400" fill="#9AA6B8">Per-application audio routing for Windows</text>
+  </g>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="17" text-anchor="middle">
+    <rect x="417" y="252" width="200" height="38" rx="19" fill="#12315E" stroke="#4F8CFF" stroke-width="1.5"/>
+    <text x="517" y="277" fill="#8FBCFF">Spotify &#8594; Speakers</text>
+    <rect x="633" y="252" width="230" height="38" rx="19" fill="#0F3B2C" stroke="#38D39F" stroke-width="1.5"/>
+    <text x="748" y="277" fill="#38D39F">Games &#8594; Headphones</text>
+  </g>
+</svg>

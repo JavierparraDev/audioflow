@@ -1,9 +1,28 @@
-# AudioFlow
+<div align="center">
 
-> **Professional per-application audio routing for Windows.**
+<img src="docs/assets/banner.svg" alt="AudioFlow — per-application audio routing for Windows" width="100%" />
 
-AudioFlow lets you decide **where each application plays its audio**. The primary
-use case:
+<br/>
+
+**Decide where each application plays its audio on Windows.**
+
+[![build](https://img.shields.io/github/actions/workflow/status/JavierparraDev/audioflow/build.yml?branch=main&label=build&logo=github)](https://github.com/JavierparraDev/audioflow/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/JavierparraDev/audioflow?include_prereleases&label=release&logo=github)](https://github.com/JavierparraDev/audioflow/releases)
+[![license](https://img.shields.io/github/license/JavierparraDev/audioflow?label=license)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows)](https://www.microsoft.com/windows)
+
+[English](README.md) · [Español](README.es.md) · [Releases](https://github.com/JavierparraDev/audioflow/releases) · [Roadmap](docs/ROADMAP.md)
+
+</div>
+
+---
+
+## What is AudioFlow?
+
+AudioFlow lets you decide **where each application plays its audio**. The classic
+setup: keep music on your **speakers** while games, voice chat and video stay on
+your **headphones** — at the same time, without unplugging anything.
 
 ```
 Spotify            ->  Speakers
@@ -13,20 +32,22 @@ Games              ->  Headphones
 Everything else    ->  Headphones (default rule)
 ```
 
-[Español](README.es.md)
-
----
+AudioFlow is a native **Windows 10/11** desktop app (WPF, dark UI) with a CLI for
+diagnostics. Routing is **session-scoped**: when AudioFlow closes, Windows goes
+back to its normal behavior and nothing is left behind.
 
 ## Features
 
-- Detects every output device (speakers, headphones, Bluetooth, monitors, virtual devices).
-- Detects applications that are producing audio in real time (WASAPI audio sessions).
-- Stable application identification (executable name + path hash + AUMID for Store apps).
-- Per-application rules and a global default output.
-- **Audio Lock** (partial protection) to keep non-authorized apps off a device.
-- Modern dark WPF UI with **English and Spanish** localization.
-- Objective routing verification (measures the real level on each endpoint).
-- Experimental **Process Loopback** module (official API, isolated from the MVP).
+| | |
+|---|---|
+| 🎧 **Device detection** | Speakers, headphones, Bluetooth, monitors and virtual devices. |
+| 🔎 **Live sessions** | Detects applications producing audio in real time (WASAPI). |
+| 🎯 **Stable identity** | Executable name + path hash + AUMID for Store apps. |
+| 🧩 **Per-app rules** | Application rules plus a global default output. |
+| 🔒 **Audio Lock** | Partial protection to keep non-authorized apps off a device. |
+| 🌍 **Localized UI** | Modern dark WPF interface in **English and Spanish**. |
+| ✅ **Verification** | Objective routing checks that measure the real level per endpoint. |
+| 🧪 **Process Loopback** | Experimental module on the official Windows API, isolated from the MVP. |
 
 ## Requirements
 
@@ -55,48 +76,7 @@ cd audioflow
 
 See [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
-## Updates
-
-AudioFlow checks GitHub Releases once at startup (configurable) and shows the
-result in **Settings > Updates**. If a new version exists, **Update now**
-downloads it, verifies its SHA-256, and hands it to the standalone
-`AudioFlow.Updater.exe`, which backs up your settings, applies the update and
-restarts AudioFlow. Updates never run while the app is running, and AudioFlow
-keeps working normally when offline.
-
-See [docs/UPDATES.md](docs/UPDATES.md).
-
-## Session & safety
-
-Routing is **session-scoped**. While AudioFlow is open, rules may be active; when
-AudioFlow closes, Windows returns to its normal audio behavior. AudioFlow
-snapshots the original state, writes an atomic recovery marker before changing
-anything, and restores on exit. If AudioFlow crashes, the next launch restores
-Windows audio **before** doing anything else and never re-activates routing
-automatically.
-
-```powershell
-audioflow session   # ACTIVE | INACTIVE | STALE
-audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
-.\tools\emergency-restore.ps1   # restore without the UI
-```
-
-See [docs/SESSION-RULES.md](docs/SESSION-RULES.md) and
-[docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
-
-A small independent **Session Guardian** (`AudioFlow.SessionGuardian.exe`)
-monitors AudioFlow while it runs and restores Windows audio within seconds if
-AudioFlow crashes, without waiting for a restart. Device disconnects are handled
-by restoring only the affected applications. See
-[docs/SESSION-GUARDIAN.md](docs/SESSION-GUARDIAN.md) and
-[docs/DEVICE-RECOVERY.md](docs/DEVICE-RECOVERY.md).
-
-```powershell
-audioflow diagnostics   # session / guardian / devices / routes
-audioflow guardian status
-```
-
-## Usage
+## Quick start
 
 1. Run `publish/ui/AudioFlow.exe`.
 2. Pick the **Speakers** and **Headphones** devices.
@@ -116,6 +96,71 @@ audioflow loopback-probe <pid>  # experimental process loopback probe
 audioflow version             # show the version (e.g. AudioFlow 0.2.0)
 audioflow update --check      # check GitHub Releases for updates
 audioflow routing             # routing backends + virtual endpoint status
+```
+
+## Table of contents
+
+- [What is AudioFlow?](#what-is-audioflow)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Updates](#updates)
+- [Session & safety](#session--safety)
+- [Routing backends](#routing-backends)
+- [Architecture](#architecture)
+- [Routing limitations (read this)](#routing-limitations-read-this)
+- [Audio Lock limitations](#audio-lock-limitations)
+- [Process Loopback (experimental)](#process-loopback-experimental)
+- [Testing](#testing)
+- [Development](#development)
+- [Contributing & forking](#contributing--forking)
+- [License](#license)
+- [Privacy](#privacy)
+
+## Updates
+
+AudioFlow checks GitHub Releases once at startup (configurable) and shows the
+result in **Settings > Updates**. If a new version exists, **Update now**
+downloads it, verifies its SHA-256, and hands it to the standalone
+`AudioFlow.Updater.exe`, which backs up your settings, applies the update and
+restarts AudioFlow. Updates never run while the app is running, and AudioFlow
+keeps working normally when offline.
+
+See [docs/UPDATES.md](docs/UPDATES.md).
+
+## Session & safety
+
+Routing is **session-scoped and fully ephemeral**. While AudioFlow is open, rules
+live in memory and may be active; when AudioFlow closes, Windows returns to its
+normal audio behavior and **nothing remains**: no rules file, no logs and no
+audio registry change. AudioFlow snapshots the original state (including the
+per-application audio registry) before changing anything and restores it exactly
+on exit — even for applications that are no longer running. If AudioFlow crashes,
+the next launch restores Windows audio **before** doing anything else and never
+re-activates routing automatically.
+
+```powershell
+audioflow session   # ACTIVE | INACTIVE | STALE
+audioflow restore   # RESTORE SUCCESS | RESTORE FAILED
+audioflow cleanup   # remove every rule, log and registry change left behind
+.\tools\emergency-restore.ps1   # restore without the UI
+.\tools\cleanup.ps1             # clean up without the UI
+```
+
+See [docs/SESSION-RULES.md](docs/SESSION-RULES.md) and
+[docs/CRASH-RECOVERY.md](docs/CRASH-RECOVERY.md).
+
+A small independent **Session Guardian** (`AudioFlow.SessionGuardian.exe`)
+monitors AudioFlow while it runs and restores Windows audio within seconds if
+AudioFlow crashes, without waiting for a restart. Device disconnects are handled
+by restoring only the affected applications. See
+[docs/SESSION-GUARDIAN.md](docs/SESSION-GUARDIAN.md) and
+[docs/DEVICE-RECOVERY.md](docs/DEVICE-RECOVERY.md).
+
+```powershell
+audioflow diagnostics   # session / guardian / devices / routes
+audioflow guardian status
 ```
 
 ## Routing backends
@@ -193,10 +238,25 @@ See [docs/TESTING.md](docs/TESTING.md) and [docs/TEST-REPORT.md](docs/TEST-REPOR
 - SDK pinned in [global.json](global.json).
 - CI: [.github/workflows/build.yml](.github/workflows/build.yml).
 
-## Contributing
+## Contributing & forking
 
-Issues and pull requests are welcome. Please keep UI text localized (add keys to
-both `Strings.resx` and `Strings.es.resx`) and add tests for behavior changes.
+**Your feedback is what makes AudioFlow better.** 🚀
+
+1. **Try it** — grab the latest [Release](https://github.com/JavierparraDev/audioflow/releases)
+   or build from source, and use it with your real devices.
+2. **Fork it** — press **Fork**, create a branch and make it yours. All the
+   hardware, audio stacks and use cases out there are different from ours.
+3. **Share improvements** — open a PR with your fix, new backend, device
+   profile or translation. Small, focused PRs are easiest to review.
+4. **Report** — found a device or app that does not route as expected? Open an
+   [issue](https://github.com/JavierparraDev/audioflow/issues) with your Windows
+   build, devices and steps to reproduce.
+
+Please keep UI text localized (add keys to both `Strings.resx` and
+`Strings.es.resx`) and add tests for behavior changes.
+
+> **Fork, experiment, and send back what works.** Whether it is a new routing
+> backend, a device-specific fix or a better UI, contributions are welcome.
 
 ## License
 
