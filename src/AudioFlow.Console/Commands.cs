@@ -19,6 +19,9 @@ internal static class Commands
         Console.WriteLine("  audioflow rules                      Show the saved rules (Phase 4)");
         Console.WriteLine("  audioflow plan                       Resolve active sessions to devices (Phase 4)");
         Console.WriteLine("  audioflow apply                      Apply the rules to active sessions (Phase 5)");
+        Console.WriteLine("  audioflow verify <device>            Measure real audio level per endpoint (Phase E)");
+        Console.WriteLine("  audioflow route-pid <pid> <device>   Route one process (diagnostics)");
+        Console.WriteLine("  audioflow loopback-probe <pid>       Probe Windows Process Loopback (experimental)");
         Console.WriteLine("  audioflow set-default <device>       Set the default output device");
         Console.WriteLine("  audioflow set-rule <app> <device>    Route an application to a device");
         Console.WriteLine("  audioflow remove-rule <app>          Delete an application rule");
@@ -207,7 +210,7 @@ internal static class Commands
         foreach (var session in list)
         {
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
-            var resolution = engine.Resolve(key);
+            var resolution = engine.Resolve(key, session.ApplicationPathHash);
             var marker = resolution.HasExplicitRule ? "RULE" : "DEFAULT";
             if (resolution.BlockedByAudioLock)
             {
@@ -253,7 +256,7 @@ internal static class Commands
         foreach (var session in list)
         {
             var key = session.ApplicationKey ?? $"pid:{session.ProcessId}";
-            var resolution = engine.Resolve(key);
+            var resolution = engine.Resolve(key, session.ApplicationPathHash);
 
             if (string.IsNullOrWhiteSpace(resolution.OutputDeviceId))
             {
@@ -281,6 +284,104 @@ internal static class Commands
         Console.WriteLine($"Applied: {applied}   Failed: {failed}");
         Footer();
         return failed == 0 ? 0 : 1;
+    }
+
+    public static int Verify(string[] args)
+    {
+        if (args.Length < 1)
+        {
+            Console.WriteLine("Usage: audioflow verify <device>");
+            return 1;
+        }
+
+        using var devices = new AudioDeviceManager();
+        var (id, name) = ResolveDeviceArg(args[0], devices.GetOutputDevices());
+        if (id is null)
+        {
+            Console.WriteLine($"Device not found: {args[0]}");
+            return 1;
+        }
+
+        Banner("ROUTING VERIFICATION");
+        Console.WriteLine($"Expected endpoint: {name}");
+        Console.WriteLine("Measuring the real audio level of every endpoint for 3 seconds...");
+        Console.WriteLine("Play audio in the target application while this runs.");
+        Console.WriteLine();
+
+        using var verifier = new AudioOutputVerifier();
+        var result = verifier.Verify(id, TimeSpan.FromSeconds(3));
+
+        foreach (var peak in result.Peaks)
+        {
+            var mark = string.Equals(peak.DeviceId, id, StringComparison.OrdinalIgnoreCase)
+                ? "   <== expected"
+                : string.Empty;
+            Console.WriteLine($"  {peak.Peak:0.0000}  {peak.DeviceName}{mark}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(result.Verified
+            ? "RESULT: VERIFIED - signal present on the expected endpoint only."
+            : result.SignalOnExpected
+                ? "RESULT: PARTIAL - signal on the expected endpoint, but also on another device."
+                : "RESULT: NOT VERIFIED - no signal measured on the expected endpoint.");
+
+        Footer();
+        return 0;
+    }
+
+    public static int RoutePid(string[] args)
+    {
+        if (args.Length < 2 || !uint.TryParse(args[0], out var pid))
+        {
+            Console.WriteLine("Usage: audioflow route-pid <pid> <device>");
+            return 1;
+        }
+
+        using var devices = new AudioDeviceManager();
+        var (id, name) = ResolveDeviceArg(args[1], devices.GetOutputDevices());
+        if (id is null)
+        {
+            Console.WriteLine($"Device not found: {args[1]}");
+            return 1;
+        }
+
+        var routing = new AudioRoutingManager();
+        var result = routing.Apply(pid, $"pid:{pid}", id);
+
+        Console.WriteLine($"pid {pid} -> {name}");
+        Console.WriteLine($"success={result.Success} verified={result.Verified} status={result.Status}");
+        if (result.Error is not null)
+        {
+            Console.WriteLine($"error: {result.Error}");
+        }
+
+        return result.Success ? 0 : 1;
+    }
+
+    public static int LoopbackProbe(string[] args)
+    {
+        if (args.Length < 1 || !uint.TryParse(args[0], out var pid))
+        {
+            Console.WriteLine("Usage: audioflow loopback-probe <pid>");
+            return 1;
+        }
+
+        Banner("PROCESS LOOPBACK (EXPERIMENTAL)");
+        Console.WriteLine($"Supported on this OS: {AudioFlow.ProcessLoopback.ProcessLoopbackProbe.IsSupported}");
+        Console.WriteLine($"Target process: {pid}");
+        Console.WriteLine();
+
+        var result = AudioFlow.ProcessLoopback.ProcessLoopbackProbe.Probe(pid);
+
+        Console.WriteLine($"supported: {result.Supported}");
+        Console.WriteLine($"activated: {result.Activated}");
+        Console.WriteLine($"message  : {result.Message}");
+        Console.WriteLine();
+        Console.WriteLine("Note: this only proves the capture interface can be activated;");
+        Console.WriteLine("re-rendering captured audio is not implemented yet (experimental).");
+        Footer();
+        return result.Activated ? 0 : 2;
     }
 
     public static int SetDefault(string[] args)

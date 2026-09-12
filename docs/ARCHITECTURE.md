@@ -98,3 +98,42 @@ Sesión detectada
   Process Loopback (oficial).
 - **Sin privilegios de administrador**.
 - **Sin recolección de datos personales**.
+
+## 7. Solución completa
+
+```
+src/
+├── AudioFlow.Models          Modelos de dominio (net8.0)
+├── AudioFlow.Applications    ProcessManager, ApplicationIdentifier
+├── AudioFlow.Core            Dispositivos, sesiones, routing, verificación
+├── AudioFlow.Rules           RuleEngine, RuleStorage (JSON atómico)
+├── AudioFlow.ProcessLoopback EXPERIMENTAL (API oficial, aislado)
+├── AudioFlow.Console         CLI de diagnóstico
+└── AudioFlow.UI              WPF + localización (EN/ES)
+tests/
+├── AudioFlow.Tests           Unitarios (xUnit)
+└── AudioFlow.Windows.Tests   Integración Windows ([WindowsFact] -> skip)
+```
+
+### Core
+
+- `AudioDeviceManager` - `IMMDeviceEnumerator` + notificaciones de endpoint.
+- `AudioSessionManager` - `IAudioSessionManager2` / `IAudioSessionControl2`.
+- `AudioSessionMonitor` - hilo MTA, eventos de sesión, refresco ligero.
+- `AudioRoutingManager` - aplica y verifica el endpoint persistido.
+- `AudioOutputVerifier` - mide el nivel real de audio por endpoint.
+- `WindowsAudio/AudioPolicyConfig` - interop de `IAudioPolicyConfigFactory`.
+
+### UI
+
+- `MainViewModel` orquesta dispositivos, sesiones, reglas, Audio Lock y routing.
+- Vistas por pestaña con navegación lateral (Dashboard, Applications, Rules,
+  Devices, Diagnostics, Settings).
+- `Localization/` - `Loc`, `LocalizationSource`, `{loc:Tr}`; recursos
+  `Strings.resx` (EN, por defecto) y `Strings.es.resx` (ES).
+
+### Verificación
+
+`AudioOutputVerifier` es la fuente de verdad objetiva: un retorno de API correcto
+**no** demuestra que el audio llegue al dispositivo. Ver
+[TEST-REPORT.md](TEST-REPORT.md).

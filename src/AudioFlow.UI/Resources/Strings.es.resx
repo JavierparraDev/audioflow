@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>AudioFlow</value></data>
+  <data name="AppSubtitle" xml:space="preserve"><value>Controla dónde suena cada aplicación.</value></data>
+  <data name="NavDashboard" xml:space="preserve"><value>Panel</value></data>
+  <data name="NavApplications" xml:space="preserve"><value>Aplicaciones</value></data>
+  <data name="NavRules" xml:space="preserve"><value>Reglas</value></data>
+  <data name="NavDevices" xml:space="preserve"><value>Dispositivos</value></data>
+  <data name="NavDiagnostics" xml:space="preserve"><value>Diagnóstico</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Configuración</value></data>
+  <data name="StatusRunning" xml:space="preserve"><value>Motor de audio activo</value></data>
+  <data name="StatusStopped" xml:space="preserve"><value>Motor de audio detenido</value></data>
+  <data name="BtnApplyNow" xml:space="preserve"><value>Aplicar ahora</value></data>
+  <data name="BtnRefresh" xml:space="preserve"><value>Actualizar</value></data>
+  <data name="BtnStart" xml:space="preserve"><value>Iniciar</value></data>
+  <data name="BtnStop" xml:space="preserve"><value>Detener</value></data>
+  <data name="SectionOutputDevices" xml:space="preserve"><value>Dispositivos de salida</value></data>
+  <data name="Speakers" xml:space="preserve"><value>Parlantes</value></data>
+  <data name="Headphones" xml:space="preserve"><value>Audífonos</value></data>
+  <data name="SectionActiveApplications" xml:space="preserve"><value>Aplicaciones activas</value></data>
+  <data name="DefaultOutput" xml:space="preserve"><value>Salida predeterminada</value></data>
+  <data name="DefaultOutputHint" xml:space="preserve"><value>Las aplicaciones nuevas usarán esta salida a menos que exista una regla.</value></data>
+  <data name="AudioLock" xml:space="preserve"><value>Bloqueo de audio</value></data>
+  <data name="AudioLockOn" xml:space="preserve"><value>Activado</value></data>
+  <data name="AudioLockOff" xml:space="preserve"><value>Desactivado</value></data>
+  <data name="AudioLockPartial" xml:space="preserve"><value>Protección parcial</value></data>
+  <data name="AudioLockHint" xml:space="preserve"><value>Las aplicaciones sin una regla explícita permanecen en la salida predeterminada. Las apps que usan su propio endpoint o modo exclusivo pueden saltarse esta política.</value></data>
+  <data name="FlowTitle" xml:space="preserve"><value>Flujo de audio</value></data>
+  <data name="ApplicationsTitle" xml:space="preserve"><value>Aplicaciones</value></data>
+  <data name="ApplicationsHint" xml:space="preserve"><value>Elige dónde debe sonar cada aplicación detectada.</value></data>
+  <data name="AddToSpeakers" xml:space="preserve"><value>+ Parlantes</value></data>
+  <data name="OnSpeakers" xml:space="preserve"><value>En parlantes</value></data>
+  <data name="Playing" xml:space="preserve"><value>Reproduciendo</value></data>
+  <data name="Idle" xml:space="preserve"><value>Inactiva</value></data>
+  <data name="RulesTitle" xml:space="preserve"><value>Reglas</value></data>
+  <data name="DefaultRule" xml:space="preserve"><value>Regla predeterminada</value></data>
+  <data name="DefaultRuleHint" xml:space="preserve"><value>Todo lo demás</value></data>
+  <data name="ExplicitRules" xml:space="preserve"><value>Reglas explícitas</value></data>
+  <data name="NoRules" xml:space="preserve"><value>Aún no hay reglas. Agrega una aplicación desde la pestaña Aplicaciones.</value></data>
+  <data name="BtnRemove" xml:space="preserve"><value>Quitar</value></data>
+  <data name="DevicesTitle" xml:space="preserve"><value>Dispositivos de salida</value></data>
+  <data name="DeviceName" xml:space="preserve"><value>Nombre</value></data>
+  <data name="DeviceId" xml:space="preserve"><value>ID del dispositivo</value></data>
+  <data name="DeviceStatus" xml:space="preserve"><value>Estado</value></data>
+  <data name="DeviceDefault" xml:space="preserve"><value>Predeterminado</value></data>
+  <data name="StateActive" xml:space="preserve"><value>Activo</value></data>
+  <data name="StateDisabled" xml:space="preserve"><value>Deshabilitado</value></data>
+  <data name="StateNotPresent" xml:space="preserve"><value>No presente</value></data>
+  <data name="StateUnplugged" xml:space="preserve"><value>Desconectado</value></data>
+  <data name="StateUnknown" xml:space="preserve"><value>Desconocido</value></data>
+  <data name="DiagnosticsTitle" xml:space="preserve"><value>Diagnóstico</value></data>
+  <data name="DiagnosticsHint" xml:space="preserve"><value>Detalles técnicos para depurar. No se necesitan para el uso normal.</value></data>
+  <data name="ColProcess" xml:space="preserve"><value>Proceso</value></data>
+  <data name="ColPid" xml:space="preserve"><value>PID</value></data>
+  <data name="ColAumid" xml:space="preserve"><value>AUMID</value></data>
+  <data name="ColSessionId" xml:space="preserve"><value>ID de sesión</value></data>
+  <data name="ColEndpoint" xml:space="preserve"><value>Endpoint</value></data>
+  <data name="ColDevice" xml:space="preserve"><value>Dispositivo</value></data>
+  <data name="ColState" xml:space="preserve"><value>Estado</value></data>
+  <data name="ColVolume" xml:space="preserve"><value>Volumen</value></data>
+  <data name="ColPeak" xml:space="preserve"><value>Pico</value></data>
+  <data name="ColRouting" xml:space="preserve"><value>Routing</value></data>
+  <data name="ColVerified" xml:space="preserve"><value>Verificado</value></data>
+  <data name="RoutingVerified" xml:space="preserve"><value>Verificado</value></data>
+  <data name="RoutingUnverified" xml:space="preserve"><value>Sin verificar</value></data>
+  <data name="RoutingFailed" xml:space="preserve"><value>Falló</value></data>
+  <data name="RoutingDefault" xml:space="preserve"><value>Predeterminado</value></data>
+  <data name="RoutingExplicit" xml:space="preserve"><value>Explícita</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Configuración</value></data>
+  <data name="Language" xml:space="preserve"><value>Idioma</value></data>
+  <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="LanguageSpanish" xml:space="preserve"><value>Español</value></data>
+  <data name="About" xml:space="preserve"><value>Acerca de</value></data>
+  <data name="AboutText" xml:space="preserve"><value>AudioFlow - enrutado de audio por aplicación para Windows.</value></data>
+  <data name="License" xml:space="preserve"><value>Licencia</value></data>
+  <data name="Repository" xml:space="preserve"><value>Repositorio</value></data>
+  <data name="Version" xml:space="preserve"><value>Versión</value></data>
+  <data name="LogsTitle" xml:space="preserve"><value>Registro</value></data>
+  <data name="BtnOpenLogs" xml:space="preserve"><value>Abrir carpeta de logs</value></data>
+  <data name="NoDevices" xml:space="preserve"><value>No se encontraron dispositivos de salida.</value></data>
+  <data name="SelectSpeakersFirst" xml:space="preserve"><value>Selecciona primero un dispositivo de parlantes.</value></data>
+  <data name="SelectDevices" xml:space="preserve"><value>Selecciona un dispositivo de parlantes y uno de audífonos.</value></data>
+  <data name="RoutingApplied" xml:space="preserve"><value>Routing aplicado y verificado para {0} sesión(es).</value></data>
+  <data name="RoutingRequested" xml:space="preserve"><value>Routing solicitado para {0} sesión(es): {1} verificadas, {2} sin verificar (la app puede necesitar reiniciar su stream de audio).</value></data>
+  <data name="RuleAdded" xml:space="preserve"><value>Regla añadida: {0} -&gt; {1}</value></data>
+  <data name="RuleRemoved" xml:space="preserve"><value>Regla eliminada: {0} (ahora va a audífonos)</value></data>
+  <data name="RoutingStarted" xml:space="preserve"><value>Routing iniciado.</value></data>
+  <data name="RoutingStopped" xml:space="preserve"><value>Routing detenido.</value></data>
+  <data name="DevicesRefreshed" xml:space="preserve"><value>Dispositivos y sesiones actualizados.</value></data>
+  <data name="AudioLockEnabled" xml:space="preserve"><value>Bloqueo de audio activado.</value></data>
+  <data name="AudioLockDisabled" xml:space="preserve"><value>Bloqueo de audio desactivado.</value></data>
+  <data name="AudioLockNeedsDevices" xml:space="preserve"><value>El bloqueo de audio requiere un dispositivo de parlantes y uno de audífonos.</value></data>
+  <data name="EmptyDetected" xml:space="preserve"><value>Ninguna aplicación está reproduciendo audio ahora mismo.</value></data>
+  <data name="Default" xml:space="preserve"><value>Predeterminado</value></data>
+  <data name="On" xml:space="preserve"><value>Activado</value></data>
+  <data name="Off" xml:space="preserve"><value>Desactivado</value></data>
+</root>

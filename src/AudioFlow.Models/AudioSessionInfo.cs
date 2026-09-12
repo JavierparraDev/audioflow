@@ -24,6 +24,9 @@ public sealed class AudioSessionInfo
     /// <summary>Stable application key used by routing rules, e.g. "exe:spotify.exe".</summary>
     public string? ApplicationKey { get; set; }
 
+    /// <summary>SHA-256 prefix of the normalized executable path, for disambiguation.</summary>
+    public string? ApplicationPathHash { get; set; }
+
     /// <summary>Application User Model ID for packaged apps, when available.</summary>
     public string? Aumid { get; set; }
 

@@ -78,6 +78,30 @@ WHQL. **Descartado para el MVP.**
 - Resultado `E_INVALIDARG` (0x80070057) = "PROCESS_NO_AUDIO": el proceso no
   tiene audio activo, la llamada no aplica nada. Se reporta como fallo.
 
+### Resultado real de la verificación (Windows 11 build 26200)
+
+- La escritura del endpoint persistido se acepta y se verifica leyendo el valor
+  de vuelta (`verified=True`).
+- **Pero** un experimento controlado de reinicio de stream **no** movió el audio
+  del proceso de prueba al dispositivo solicitado.
+- Por tanto el routing por esta vía es **PARTIAL**, no en vivo.
+
+Ver [TEST-REPORT.md](TEST-REPORT.md) para el detalle y [LIMITATIONS.md](LIMITATIONS.md).
+
+### Fase 5B - Process Loopback (experimental)
+
+`src/AudioFlow.ProcessLoopback` implementa la activación de la API oficial
+(`AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS`). En Windows 11 la activación de la
+interfaz de captura por proceso **funciona** (verificado con `loopback-probe`),
+pero la captura y el re-render no están implementados todavía. No sustituye al
+routing actual y no debe presentarse como solución completa.
+
+Documentado: latencia (media, decenas de ms), CPU (por medir), límites DRM
+(no captura contenido protegido), procesos hijos (se incluyen con
+`PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE`), duplicación de audio
+(habría que mutear la sesión original) y compatibilidad con Electron/navegadores
+(procesos hijos).
+
 ## Audio Lock
 
 No es una API distinta: es una política del motor de reglas.

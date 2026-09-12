@@ -36,13 +36,11 @@ public sealed class RuleEngine
         Rules.Rules.FirstOrDefault(r =>
             string.Equals(r.ApplicationIdentifier, applicationKey, StringComparison.OrdinalIgnoreCase));
 
-    public RuleResolution Resolve(ApplicationIdentity identity) => Resolve(identity.Key);
+    public RuleResolution Resolve(ApplicationIdentity identity) => Resolve(identity.Key, identity.PathHash);
 
-    public RuleResolution Resolve(string applicationKey)
+    public RuleResolution Resolve(string applicationKey, string? pathHash = null)
     {
-        var rule = Rules.Rules.FirstOrDefault(r =>
-            r.Enabled &&
-            string.Equals(r.ApplicationIdentifier, applicationKey, StringComparison.OrdinalIgnoreCase));
+        var rule = FindEnabledRule(applicationKey, pathHash);
 
         var target = rule?.OutputDeviceId ?? Rules.DefaultOutputDeviceId;
         var hasExplicitRule = rule is not null;
@@ -62,6 +60,24 @@ public sealed class RuleEngine
             hasExplicitRule,
             BlockedByAudioLock: false,
             Reason: hasExplicitRule ? "explicit rule" : "default rule");
+    }
+
+    private AudioRule? FindEnabledRule(string applicationKey, string? pathHash)
+    {
+        var byKey = Rules.Rules.FirstOrDefault(r =>
+            r.Enabled &&
+            string.Equals(r.ApplicationIdentifier, applicationKey, StringComparison.OrdinalIgnoreCase));
+
+        if (byKey is not null || string.IsNullOrWhiteSpace(pathHash))
+        {
+            return byKey;
+        }
+
+        // Secondary match (R7): disambiguate applications that share a file name.
+        return Rules.Rules.FirstOrDefault(r =>
+            r.Enabled &&
+            !string.IsNullOrWhiteSpace(r.PathHash) &&
+            string.Equals(r.PathHash, pathHash, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool IsBlockedByAudioLock(string applicationKey, string? target)
@@ -85,7 +101,7 @@ public sealed class RuleEngine
         Persist();
     }
 
-    public AudioRule SetRule(string applicationKey, string applicationName, string outputDeviceId)
+    public AudioRule SetRule(string applicationKey, string applicationName, string outputDeviceId, string? pathHash = null)
     {
         var rule = FindRule(applicationKey);
         if (rule is null)
@@ -94,7 +110,8 @@ public sealed class RuleEngine
             {
                 ApplicationIdentifier = applicationKey,
                 ApplicationName = applicationName,
-                OutputDeviceId = outputDeviceId
+                OutputDeviceId = outputDeviceId,
+                PathHash = pathHash
             };
             Rules.Rules.Add(rule);
         }
@@ -103,6 +120,10 @@ public sealed class RuleEngine
             rule.ApplicationName = applicationName;
             rule.OutputDeviceId = outputDeviceId;
             rule.Enabled = true;
+            if (!string.IsNullOrWhiteSpace(pathHash))
+            {
+                rule.PathHash = pathHash;
+            }
         }
 
         Persist();

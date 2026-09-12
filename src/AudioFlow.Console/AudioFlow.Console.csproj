@@ -12,6 +12,7 @@
     <ProjectReference Include="..\AudioFlow.Core\AudioFlow.Core.csproj" />
     <ProjectReference Include="..\AudioFlow.Models\AudioFlow.Models.csproj" />
     <ProjectReference Include="..\AudioFlow.Rules\AudioFlow.Rules.csproj" />
+    <ProjectReference Include="..\AudioFlow.ProcessLoopback\AudioFlow.ProcessLoopback.csproj" />
   </ItemGroup>
 
 </Project>
