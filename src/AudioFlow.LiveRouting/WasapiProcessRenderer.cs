@@ -73,7 +73,7 @@ public sealed class WasapiProcessRenderer : IDisposable
             var sourceWaveFormat = new WaveFormat(_sourceFormat.SampleRate, _sourceFormat.BitsPerSample, _sourceFormat.Channels);
             _buffer = new BufferedWaveProvider(sourceWaveFormat)
             {
-                BufferDuration = TimeSpan.FromMilliseconds(750),
+                BufferLength = (int)(sourceWaveFormat.AverageBytesPerSecond * 0.75),
                 DiscardOnBufferOverflow = true,
                 ReadFully = false
             };

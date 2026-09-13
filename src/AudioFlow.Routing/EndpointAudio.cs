@@ -153,7 +153,7 @@ public sealed class WasapiEndpointRenderer : IDisposable
 
             _buffer = new BufferedWaveProvider(_sourceFormat)
             {
-                BufferDuration = TimeSpan.FromMilliseconds(750),
+                BufferLength = (int)(_sourceFormat.AverageBytesPerSecond * 0.75),
                 DiscardOnBufferOverflow = true,
                 ReadFully = false
             };
