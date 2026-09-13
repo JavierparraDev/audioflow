@@ -71,9 +71,8 @@ public sealed class WasapiProcessRenderer : IDisposable
             MixFormatDescription = $"{mix.SampleRate}Hz/{mix.Channels}ch/{mix.BitsPerSample}bit/{mix.Encoding}";
 
             var sourceWaveFormat = new WaveFormat(_sourceFormat.SampleRate, _sourceFormat.BitsPerSample, _sourceFormat.Channels);
-            _buffer = new BufferedWaveProvider(sourceWaveFormat)
+            _buffer = new BufferedWaveProvider(sourceWaveFormat, TimeSpan.FromMilliseconds(750))
             {
-                BufferLength = (int)(sourceWaveFormat.AverageBytesPerSecond * 0.75),
                 DiscardOnBufferOverflow = true,
                 ReadFully = false
             };

@@ -151,9 +151,8 @@ public sealed class WasapiEndpointRenderer : IDisposable
             var mix = _device.AudioClient.MixFormat;
             MixFormatDescription = $"{mix.SampleRate}Hz/{mix.Channels}ch/{mix.BitsPerSample}bit/{mix.Encoding}";
 
-            _buffer = new BufferedWaveProvider(_sourceFormat)
+            _buffer = new BufferedWaveProvider(_sourceFormat, TimeSpan.FromMilliseconds(750))
             {
-                BufferLength = (int)(_sourceFormat.AverageBytesPerSecond * 0.75),
                 DiscardOnBufferOverflow = true,
                 ReadFully = false
             };
