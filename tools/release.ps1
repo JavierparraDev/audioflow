@@ -129,7 +129,9 @@ $notes = @"
 2. Or use the portable ``AudioFlow-v$Version-$Runtime.zip``.
 
 ## Upgrade notes
-- Your rules and settings in ``%APPDATA%\AudioFlow`` are preserved.
+- AudioFlow is session-only: it leaves no rules, logs or audio registry changes
+  behind when it is not running. Legacy files from earlier versions are cleaned
+  automatically on first launch.
 - Verify downloads against ``SHA256SUMS.txt``.
 "@
 $notes | Set-Content -Path (Join-Path $artifacts 'RELEASE-NOTES.md') -Encoding utf8

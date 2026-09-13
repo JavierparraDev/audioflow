@@ -5,7 +5,7 @@
 - [x] Device enumeration (WASAPI / MMDevice).
 - [x] Audio session detection with real-time events.
 - [x] Stable application identification (name + path hash + AUMID).
-- [x] Rule engine + JSON persistence (atomic save).
+- [x] Rule engine with session-only (ephemeral) rules.
 - [x] Audio Lock (partial).
 - [x] Per-application persisted-endpoint routing.
 - [x] Objective routing verification (endpoint peak).
@@ -43,7 +43,9 @@
 - [x] Restore statuses: Exact / Fallback / Failed.
 - [x] Crash recovery on next launch (never auto-restarts routing).
 - [x] Clean-exit restore (window, Alt+F4, tray exit, Windows shutdown).
-- [x] `audioflow session` / `audioflow restore` and `tools/emergency-restore.ps1`.
+- [x] `audioflow session` / `audioflow restore` / `audioflow cleanup` and
+  `tools/emergency-restore.ps1` / `tools/cleanup.ps1`.
+- [x] Exact per-application audio registry snapshot/restore (leaves no trace).
 - [x] UI session status, safety banner, Emergency Reset and tray.
 - [x] Virtual audio backend research (C -> B -> A).
 - [ ] Virtual audio endpoint integration (Phase 5).
@@ -79,6 +81,6 @@
 - [ ] Profiles / scenes (Game mode, Streaming mode).
 - [ ] Per-app volume and mute in the UI.
 - [ ] Device reconnection handling with stable identifiers (Container ID).
-- [ ] Tray icon and start-with-Windows.
 - [ ] Additional languages.
+- [ ] Code signing for installers and binaries.
 - [ ] Optional signed virtual audio driver for perfect routing.

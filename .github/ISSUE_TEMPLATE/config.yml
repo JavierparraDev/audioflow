@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/JavierparraDev/audioflow/discussions
+    about: Ask questions, share setups and discuss the project.
+  - name: Known limitations
+    url: https://github.com/JavierparraDev/audioflow/blob/main/docs/LIMITATIONS.md
+    about: Read what AudioFlow can and cannot do today before reporting.
+  - name: Security issue
+    url: https://github.com/JavierparraDev/audioflow/security/advisories/new
+    about: Please report vulnerabilities privately.

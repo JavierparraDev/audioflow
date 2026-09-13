@@ -91,21 +91,24 @@ render** pipeline (see [LIVE-ROUTING-REPORT.md](LIVE-ROUTING-REPORT.md)).
 
 ## 10. Session rules and restore
 
-Routing is now **session-scoped**: AudioFlow snapshots the original state, writes
-an atomic recovery marker before any change, and restores Windows audio on exit
-or on the next launch after a crash. Limitations:
+Routing is now **session-scoped and fully ephemeral**: AudioFlow snapshots the
+original per-application audio registry (`PolicyConfig\PropertyStore`), writes an
+atomic recovery marker before any change, and restores the exact state on exit or
+on the next launch after a crash. Limitations:
 
-- The internal API has **no per-application clear**. Restore rewrites the
-  original device (or the system default); a behaviourally-neutral override entry
-  may remain for apps that had no override.
-- If an application is **not running** at restore time, its restoration is
-  deferred to the next launch or to `audioflow restore`.
+- The internal API is **undocumented** and may change between Windows builds.
+- Restore rewrites or deletes policy subkeys matched by executable name. Only
+  applications AudioFlow recorded are ever touched; unrelated apps are never
+  modified.
+- If an application is **not running** at restore time, its registry entry is
+  still removed, because restore does not depend on the process being alive.
 - After a crash, Windows audio stays changed **until the next AudioFlow launch**
   or a manual `audioflow restore` / `tools/emergency-restore.ps1`.
 - Restore matches applications by AUMID / path hash / executable name / live PID,
   never by PID alone.
-- Only applications AudioFlow recorded are ever restored; unrelated apps are
-  never touched.
+- Files (rules, session marker, logs) are deleted on a clean exit, and
+  `audioflow cleanup` / `tools/cleanup.ps1` remove anything left by earlier
+  versions.
 
 ## 11. Reliability and the session guardian
 

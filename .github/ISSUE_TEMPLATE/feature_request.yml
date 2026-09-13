@@ -1,0 +1,57 @@
+name: Feature request
+description: Suggest an idea or improvement for AudioFlow.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/JavierparraDev/audioflow/blob/main/docs/ROADMAP.md)
+        to see if it is already planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: "I'm always frustrated when ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Live routing / virtual endpoint
+        - Routing backends
+        - Devices
+        - Applications / rules
+        - Audio Lock
+        - Session safety / recovery
+        - UI / UX
+        - CLI
+        - Installer / updates
+        - Localization
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to work on this feature and open a pull request.
+          required: false

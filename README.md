@@ -253,7 +253,10 @@ See [docs/TESTING.md](docs/TESTING.md) and [docs/TEST-REPORT.md](docs/TEST-REPOR
    build, devices and steps to reproduce.
 
 Please keep UI text localized (add keys to both `Strings.resx` and
-`Strings.es.resx`) and add tests for behavior changes.
+`Strings.es.resx`) and add tests for behavior changes. Read
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. By participating you agree
+to our [Code of Conduct](CODE_OF_CONDUCT.md); report vulnerabilities privately
+following [SECURITY.md](SECURITY.md).
 
 > **Fork, experiment, and send back what works.** Whether it is a new routing
 > backend, a device-specific fix or a better UI, contributions are welcome.

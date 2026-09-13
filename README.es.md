@@ -254,7 +254,10 @@ Ver [docs/TESTING.md](docs/TESTING.md) y [docs/TEST-REPORT.md](docs/TEST-REPORT.
    Windows, dispositivos y pasos para reproducirlo.
 
 Mantén los textos de UI localizados (agrega claves en `Strings.resx` y
-`Strings.es.resx`) y añade tests para los cambios.
+`Strings.es.resx`) y añade tests para los cambios. Lee
+[CONTRIBUTING.md](CONTRIBUTING.md) para la guía completa. Al participar aceptas
+nuestro [Código de Conducta](CODE_OF_CONDUCT.md); reporta vulnerabilidades de
+forma privada siguiendo [SECURITY.md](SECURITY.md).
 
 > **Haz fork, experimenta y devuelve lo que funcione.** Ya sea un nuevo backend
 > de routing, un fix para un dispositivo o una mejor UI, las contribuciones son
