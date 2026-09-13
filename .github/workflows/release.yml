@@ -17,12 +17,12 @@ jobs:
     name: Build and publish release
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: '8.0.x'
 
@@ -46,7 +46,7 @@ jobs:
         run: ./tools/release.ps1 -Version "${{ steps.version.outputs.version }}"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: audioflow-release
           path: |
@@ -57,7 +57,7 @@ jobs:
             artifacts/RELEASE-NOTES.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           name: AudioFlow ${{ steps.version.outputs.version }}
           body_path: artifacts/RELEASE-NOTES.md
