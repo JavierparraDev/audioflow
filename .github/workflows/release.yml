@@ -57,7 +57,7 @@ jobs:
             artifacts/RELEASE-NOTES.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: AudioFlow ${{ steps.version.outputs.version }}
           body_path: artifacts/RELEASE-NOTES.md
