@@ -1,6 +1,6 @@
 # Localization
 
-AudioFlow ships with **English (default)** and **Spanish**.
+AudioFlow ships with **English (default)**, **Spanish** and **Turkish**.
 
 ## Resources
 
@@ -8,6 +8,7 @@ AudioFlow ships with **English (default)** and **Spanish**.
 | ---- | -------- |
 | `src/AudioFlow.UI/Resources/Strings.resx` | English (neutral, default) |
 | `src/AudioFlow.UI/Resources/Strings.es.resx` | Spanish |
+| `src/AudioFlow.UI/Resources/Strings.tr.resx` | Turkish |
 
 Resource base name: `AudioFlow.UI.Resources.Strings`.
 
@@ -23,8 +24,9 @@ Resource base name: `AudioFlow.UI.Resources.Strings`.
 
 ## Rules
 
-1. **Never hardcode user-visible text.** Add a key to `Strings.resx` and
-   `Strings.es.resx`, then use `{loc:Tr Key}` in XAML or `Loc.Get("Key")` in code.
+1. **Never hardcode user-visible text.** Add a key to `Strings.resx` and every
+   translated `Strings.<culture>.resx` (including the language labels such as
+   `LanguageTurkish`), then use `{loc:Tr Key}` in XAML or `Loc.Get("Key")` in code.
 2. Keep terminology consistent:
    - Speakers / Parlantes
    - Headphones / Audífonos

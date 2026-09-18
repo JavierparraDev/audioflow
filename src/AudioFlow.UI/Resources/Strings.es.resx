@@ -82,6 +82,7 @@
   <data name="Language" xml:space="preserve"><value>Idioma</value></data>
   <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
   <data name="LanguageSpanish" xml:space="preserve"><value>Español</value></data>
+  <data name="LanguageTurkish" xml:space="preserve"><value>Türkçe</value></data>
   <data name="About" xml:space="preserve"><value>Acerca de</value></data>
   <data name="AboutText" xml:space="preserve"><value>AudioFlow - enrutado de audio por aplicación para Windows.</value></data>
   <data name="License" xml:space="preserve"><value>Licencia</value></data>
