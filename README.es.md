@@ -11,8 +11,15 @@
 [![license](https://img.shields.io/github/license/JavierparraDev/audioflow?label=license)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows)](https://www.microsoft.com/windows)
+[![stars](https://img.shields.io/github/stars/JavierparraDev/audioflow?style=flat&logo=github)](https://github.com/JavierparraDev/audioflow/stargazers)
+[![forks](https://img.shields.io/github/forks/JavierparraDev/audioflow?style=flat&logo=github)](https://github.com/JavierparraDev/audioflow/network/members)
+[![issues](https://img.shields.io/github/issues/JavierparraDev/audioflow?style=flat&logo=github)](https://github.com/JavierparraDev/audioflow/issues)
+[![last commit](https://img.shields.io/github/last-commit/JavierparraDev/audioflow?style=flat&logo=github)](https://github.com/JavierparraDev/audioflow/commits/main)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[English](README.md) · [Español](README.es.md) · [Releases](https://github.com/JavierparraDev/audioflow/releases) · [Roadmap](docs/ROADMAP.md)
+[English](README.md) · [Español](README.es.md) · [Releases](https://github.com/JavierparraDev/audioflow/releases) · [Roadmap](docs/ROADMAP.md) · [Contribuir](CONTRIBUTING.md)
+
+**Idiomas de la interfaz:** English · Español · Türkçe · Français · Deutsch · Português (Brasil) · Italiano · 日本語 · Русский
 
 </div>
 
