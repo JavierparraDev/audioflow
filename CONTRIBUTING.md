@@ -93,8 +93,8 @@ src/
 
 - .NET 8, C#, nullable enabled, implicit usings, file-scoped namespaces.
 - Follow the style of the surrounding code; keep methods small and focused.
-- **UI text must be localized**: add the key to both `Strings.resx` (English)
-  and `Strings.es.resx` (Spanish). Never hardcode user-facing strings.
+- **UI text must be localized**: add the key to `Strings.resx` (English) and
+  every translated `Strings.<culture>.resx`. Never hardcode user-facing strings.
 - **Add tests** for behavior changes. Bug fixes should come with a regression
   test where possible.
 - Do not add external dependencies without discussing it in an issue first.
@@ -127,7 +127,10 @@ Use the provided [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
 1. Copy `src/AudioFlow.UI/Resources/Strings.resx` to
    `Strings.<culture>.resx` (e.g. `Strings.fr.resx`).
 2. Translate the `<value>` entries, keeping the `name` keys unchanged.
-3. Register the language in the UI language list.
+3. Add a `Language<Name>` key with the native name (e.g. `LanguageFrench` =
+   `Français`) to `Strings.resx` and every `Strings.<culture>.resx`.
+4. Register the language in `MainViewModel.Languages` and update
+   [docs/LOCALIZATION.md](docs/LOCALIZATION.md).
 
 ## Reporting bugs and security issues
 

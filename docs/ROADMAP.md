@@ -10,7 +10,7 @@
 - [x] Per-application persisted-endpoint routing.
 - [x] Objective routing verification (endpoint peak).
 - [x] Premium dark WPF UI with sidebar navigation.
-- [x] English + Spanish localization.
+- [x] Localization: English, Spanish, Turkish, French, German, Portuguese (Brazil), Italian, Japanese and Russian.
 - [x] Unit + Windows integration tests, CI.
 - [x] Experimental Process Loopback probe.
 
@@ -81,6 +81,5 @@
 - [ ] Profiles / scenes (Game mode, Streaming mode).
 - [ ] Per-app volume and mute in the UI.
 - [ ] Device reconnection handling with stable identifiers (Container ID).
-- [ ] Additional languages.
 - [ ] Code signing for installers and binaries.
 - [ ] Optional signed virtual audio driver for perfect routing.

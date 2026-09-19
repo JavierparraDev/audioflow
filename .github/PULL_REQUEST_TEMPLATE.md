@@ -31,7 +31,7 @@ dotnet test tests/AudioFlow.Tests
 
 - [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md).
 - [ ] My code follows the style of the surrounding code.
-- [ ] UI strings are localized in both `Strings.resx` and `Strings.es.resx`.
+- [ ] UI strings are localized in `Strings.resx` and every translated `Strings.<culture>.resx`.
 - [ ] I added or updated tests for the behavior change.
 - [ ] `dotnet build AudioFlow.sln -c Release` succeeds with no warnings.
 - [ ] All tests pass.

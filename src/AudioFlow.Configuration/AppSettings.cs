@@ -9,7 +9,7 @@ public sealed class AppSettings
     /// <summary>Configuration schema version, used for migrations.</summary>
     public int ConfigVersion { get; set; } = ConfigMigrator.CurrentVersion;
 
-    /// <summary>UI language code: "en" or "es".</summary>
+    /// <summary>UI language code, e.g. "en", "es", "tr". See docs/LOCALIZATION.md.</summary>
     public string Language { get; set; } = "en";
 
     /// <summary>Whether AudioFlow checks GitHub for updates on startup.</summary>

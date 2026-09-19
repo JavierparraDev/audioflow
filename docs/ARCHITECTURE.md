@@ -111,7 +111,7 @@ src/
 ├── AudioFlow.SessionGuardian Guardian independiente (restore-on-crash)
 ├── AudioFlow.ProcessLoopback EXPERIMENTAL (API oficial, aislado)
 ├── AudioFlow.Console         CLI de diagnóstico
-└── AudioFlow.UI              WPF + localización (EN/ES)
+└── AudioFlow.UI              WPF + localización multilingüe
 tests/
 ├── AudioFlow.Tests           Unitarios (xUnit)
 └── AudioFlow.Windows.Tests   Integración Windows ([WindowsFact] -> skip)
@@ -135,7 +135,7 @@ tests/
 - Vistas por pestaña con navegación lateral (Dashboard, Applications, Rules,
   Devices, Diagnostics, Settings).
 - `Localization/` - `Loc`, `LocalizationSource`, `{loc:Tr}`; recursos
-  `Strings.resx` (EN, por defecto) y `Strings.es.resx` (ES).
+  `Strings.resx` (EN, por defecto) y un `Strings.<culture>.resx` por idioma.
 
 ### Verificación
 

@@ -49,4 +49,7 @@ Resource base name: `AudioFlow.UI.Resources.Strings`.
 
 1. Copy `Strings.resx` to `Strings.<culture>.resx` (e.g. `Strings.fr.resx`).
 2. Translate the values.
-3. Add an entry to `MainViewModel.Languages`.
+3. Add a `Language<Name>` key with the native name (e.g. `LanguageFrench` =
+   `Français`) to `Strings.resx` and every `Strings.<culture>.resx`.
+4. Add an entry to `MainViewModel.Languages` using `Loc.Get("Language<Name>")`.
+5. Add the new file to the resources table above.
