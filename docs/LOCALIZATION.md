@@ -1,6 +1,6 @@
 # Localization
 
-AudioFlow ships with **English (default)**, **Spanish**, **Turkish**, **French**, **German**, **Portuguese (Brazil)**, **Italian** and **Japanese**.
+AudioFlow ships with **English (default)**, **Spanish**, **Turkish**, **French**, **German**, **Portuguese (Brazil)**, **Italian**, **Japanese** and **Russian**.
 
 ## Resources
 
@@ -14,6 +14,7 @@ AudioFlow ships with **English (default)**, **Spanish**, **Turkish**, **French**
 | `src/AudioFlow.UI/Resources/Strings.pt-BR.resx` | Portuguese (Brazil) |
 | `src/AudioFlow.UI/Resources/Strings.it.resx` | Italian |
 | `src/AudioFlow.UI/Resources/Strings.ja.resx` | Japanese |
+| `src/AudioFlow.UI/Resources/Strings.ru.resx` | Russian |
 
 Resource base name: `AudioFlow.UI.Resources.Strings`.
 

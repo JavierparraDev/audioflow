@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve"><value>AudioFlow</value></data>
+  <data name="AppSubtitle" xml:space="preserve"><value>Управляйте тем, куда каждое приложение выводит звук.</value></data>
+  <data name="NavDashboard" xml:space="preserve"><value>Панель</value></data>
+  <data name="NavApplications" xml:space="preserve"><value>Приложения</value></data>
+  <data name="NavRules" xml:space="preserve"><value>Правила</value></data>
+  <data name="NavDevices" xml:space="preserve"><value>Устройства</value></data>
+  <data name="NavDiagnostics" xml:space="preserve"><value>Диагностика</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Настройки</value></data>
+  <data name="StatusRunning" xml:space="preserve"><value>Аудиодвижок активен</value></data>
+  <data name="StatusStopped" xml:space="preserve"><value>Аудиодвижок остановлен</value></data>
+  <data name="BtnApplyNow" xml:space="preserve"><value>Применить сейчас</value></data>
+  <data name="BtnRefresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="BtnStart" xml:space="preserve"><value>Запустить</value></data>
+  <data name="BtnStop" xml:space="preserve"><value>Остановить</value></data>
+  <data name="SectionOutputDevices" xml:space="preserve"><value>Устройства вывода</value></data>
+  <data name="Speakers" xml:space="preserve"><value>Динамики</value></data>
+  <data name="Headphones" xml:space="preserve"><value>Наушники</value></data>
+  <data name="SectionActiveApplications" xml:space="preserve"><value>Активные приложения</value></data>
+  <data name="DefaultOutput" xml:space="preserve"><value>Вывод по умолчанию</value></data>
+  <data name="DefaultOutputHint" xml:space="preserve"><value>Новые приложения будут использовать этот вывод, если нет правила.</value></data>
+  <data name="AudioLock" xml:space="preserve"><value>Аудиоблокировка</value></data>
+  <data name="AudioLockOn" xml:space="preserve"><value>Вкл.</value></data>
+  <data name="AudioLockOff" xml:space="preserve"><value>Выкл.</value></data>
+  <data name="AudioLockPartial" xml:space="preserve"><value>Частичная защита</value></data>
+  <data name="AudioLockHint" xml:space="preserve"><value>Приложения без явного правила остаются на выводе по умолчанию. Приложения, использующие собственную конечную точку или монопольный режим, могут обходить эту политику.</value></data>
+  <data name="FlowTitle" xml:space="preserve"><value>Поток маршрутизации</value></data>
+  <data name="ApplicationsTitle" xml:space="preserve"><value>Приложения</value></data>
+  <data name="ApplicationsHint" xml:space="preserve"><value>Выберите, куда должно выводить звук каждое обнаруженное приложение.</value></data>
+  <data name="AddToSpeakers" xml:space="preserve"><value>+ Динамики</value></data>
+  <data name="OnSpeakers" xml:space="preserve"><value>На динамиках</value></data>
+  <data name="Playing" xml:space="preserve"><value>Воспроизведение</value></data>
+  <data name="Idle" xml:space="preserve"><value>Простой</value></data>
+  <data name="RulesTitle" xml:space="preserve"><value>Правила</value></data>
+  <data name="DefaultRule" xml:space="preserve"><value>Правило по умолчанию</value></data>
+  <data name="DefaultRuleHint" xml:space="preserve"><value>Всё остальное</value></data>
+  <data name="ExplicitRules" xml:space="preserve"><value>Явные правила</value></data>
+  <data name="NoRules" xml:space="preserve"><value>Явных правил пока нет. Добавьте приложение на вкладке «Приложения».</value></data>
+  <data name="BtnRemove" xml:space="preserve"><value>Удалить</value></data>
+  <data name="DevicesTitle" xml:space="preserve"><value>Устройства вывода</value></data>
+  <data name="DeviceName" xml:space="preserve"><value>Имя</value></data>
+  <data name="DeviceId" xml:space="preserve"><value>Идентификатор устройства</value></data>
+  <data name="DeviceStatus" xml:space="preserve"><value>Состояние</value></data>
+  <data name="DeviceDefault" xml:space="preserve"><value>По умолчанию</value></data>
+  <data name="StateActive" xml:space="preserve"><value>Активно</value></data>
+  <data name="StateDisabled" xml:space="preserve"><value>Отключено</value></data>
+  <data name="StateNotPresent" xml:space="preserve"><value>Отсутствует</value></data>
+  <data name="StateUnplugged" xml:space="preserve"><value>Отключено</value></data>
+  <data name="StateUnknown" xml:space="preserve"><value>Неизвестно</value></data>
+  <data name="DiagnosticsTitle" xml:space="preserve"><value>Диагностика</value></data>
+  <data name="DiagnosticsHint" xml:space="preserve"><value>Технические подробности для устранения неполадок. Не требуются при обычном использовании.</value></data>
+  <data name="ColProcess" xml:space="preserve"><value>Процесс</value></data>
+  <data name="ColPid" xml:space="preserve"><value>PID</value></data>
+  <data name="ColAumid" xml:space="preserve"><value>AUMID</value></data>
+  <data name="ColSessionId" xml:space="preserve"><value>Идентификатор сеанса</value></data>
+  <data name="ColEndpoint" xml:space="preserve"><value>Конечная точка</value></data>
+  <data name="ColDevice" xml:space="preserve"><value>Устройство</value></data>
+  <data name="ColState" xml:space="preserve"><value>Состояние</value></data>
+  <data name="ColVolume" xml:space="preserve"><value>Громкость</value></data>
+  <data name="ColPeak" xml:space="preserve"><value>Пик</value></data>
+  <data name="ColRouting" xml:space="preserve"><value>Маршрутизация</value></data>
+  <data name="ColVerified" xml:space="preserve"><value>Проверено</value></data>
+  <data name="RoutingVerified" xml:space="preserve"><value>Проверено</value></data>
+  <data name="RoutingUnverified" xml:space="preserve"><value>Не проверено</value></data>
+  <data name="RoutingFailed" xml:space="preserve"><value>Сбой</value></data>
+  <data name="RoutingDefault" xml:space="preserve"><value>По умолчанию</value></data>
+  <data name="RoutingExplicit" xml:space="preserve"><value>Явное</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Настройки</value></data>
+  <data name="Language" xml:space="preserve"><value>Язык</value></data>
+  <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="LanguageSpanish" xml:space="preserve"><value>Español</value></data>
+  <data name="LanguageFrench" xml:space="preserve"><value>Français</value></data>
+  <data name="LanguageGerman" xml:space="preserve"><value>Deutsch</value></data>
+  <data name="LanguagePortuguese" xml:space="preserve"><value>Português (Brasil)</value></data>
+  <data name="LanguageItalian" xml:space="preserve"><value>Italiano</value></data>
+  <data name="LanguageJapanese" xml:space="preserve"><value>日本語</value></data>
+  <data name="LanguageRussian" xml:space="preserve"><value>Русский</value></data>
+  <data name="LanguageTurkish" xml:space="preserve"><value>Türkçe</value></data>
+  <data name="About" xml:space="preserve"><value>О программе</value></data>
+  <data name="AboutText" xml:space="preserve"><value>AudioFlow — маршрутизация звука по приложениям для Windows.</value></data>
+  <data name="License" xml:space="preserve"><value>Лицензия</value></data>
+  <data name="Repository" xml:space="preserve"><value>Репозиторий</value></data>
+  <data name="Version" xml:space="preserve"><value>Версия</value></data>
+  <data name="LogsTitle" xml:space="preserve"><value>Журнал</value></data>
+  <data name="BtnOpenLogs" xml:space="preserve"><value>Открыть папку журналов</value></data>
+  <data name="NoDevices" xml:space="preserve"><value>Устройства вывода не найдены.</value></data>
+  <data name="SelectSpeakersFirst" xml:space="preserve"><value>Сначала выберите устройство динамиков.</value></data>
+  <data name="SelectDevices" xml:space="preserve"><value>Выберите устройство динамиков и устройство наушников.</value></data>
+  <data name="RoutingApplied" xml:space="preserve"><value>Маршрутизация применена и проверена для {0} сеанс(ов).</value></data>
+  <data name="RoutingRequested" xml:space="preserve"><value>Запрошена маршрутизация для {0} сеанс(ов): {1} проверено, {2} не проверено (приложению может потребоваться перезапуск аудиопотока).</value></data>
+  <data name="RuleAdded" xml:space="preserve"><value>Правило добавлено: {0} -&gt; {1}</value></data>
+  <data name="RuleRemoved" xml:space="preserve"><value>Правило удалено: {0} (теперь выводится в наушники)</value></data>
+  <data name="RoutingStarted" xml:space="preserve"><value>Маршрутизация запущена.</value></data>
+  <data name="RoutingStopped" xml:space="preserve"><value>Маршрутизация остановлена.</value></data>
+  <data name="DevicesRefreshed" xml:space="preserve"><value>Устройства и сеансы обновлены.</value></data>
+  <data name="AudioLockEnabled" xml:space="preserve"><value>Аудиоблокировка включена.</value></data>
+  <data name="AudioLockDisabled" xml:space="preserve"><value>Аудиоблокировка отключена.</value></data>
+  <data name="AudioLockNeedsDevices" xml:space="preserve"><value>Для аудиоблокировки нужны устройства динамиков и наушников.</value></data>
+  <data name="EmptyDetected" xml:space="preserve"><value>Сейчас ни одно приложение не воспроизводит звук.</value></data>
+  <data name="Default" xml:space="preserve"><value>По умолчанию</value></data>
+  <data name="On" xml:space="preserve"><value>Вкл.</value></data>
+  <data name="Off" xml:space="preserve"><value>Выкл.</value></data>
+  <data name="SettingsGeneral" xml:space="preserve"><value>Общие</value></data>
+  <data name="SettingsStartup" xml:space="preserve"><value>Запуск</value></data>
+  <data name="SettingsUpdates" xml:space="preserve"><value>Обновления</value></data>
+  <data name="CheckForUpdatesOnStartup" xml:space="preserve"><value>Проверять обновления при запуске</value></data>
+  <data name="BtnCheckForUpdates" xml:space="preserve"><value>Проверить обновления</value></data>
+  <data name="BtnUpdateNow" xml:space="preserve"><value>Обновить сейчас</value></data>
+  <data name="BtnOpenReleases" xml:space="preserve"><value>Примечания к выпуску</value></data>
+  <data name="UpdateCurrentVersionLabel" xml:space="preserve"><value>Текущая версия</value></data>
+  <data name="UpdateLatestVersionLabel" xml:space="preserve"><value>Последняя версия</value></data>
+  <data name="UpdateStatusLabel" xml:space="preserve"><value>Состояние</value></data>
+  <data name="UpdateLastCheckedLabel" xml:space="preserve"><value>Последняя проверка</value></data>
+  <data name="UpdateChecking" xml:space="preserve"><value>Проверка обновлений...</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Актуально</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>Доступно обновление</value></data>
+  <data name="UpdateNoRelease" xml:space="preserve"><value>Выпусков пока нет</value></data>
+  <data name="UpdateUnable" xml:space="preserve"><value>Не удалось проверить обновления</value></data>
+  <data name="UpdateUnknown" xml:space="preserve"><value>Неизвестно</value></data>
+  <data name="UpdateUpToDateMessage" xml:space="preserve"><value>У вас последняя версия.</value></data>
+  <data name="UpdateAvailableMessage" xml:space="preserve"><value>Доступна версия {0}.</value></data>
+  <data name="UpdateNoReleaseMessage" xml:space="preserve"><value>Нет опубликованного выпуска для сравнения.</value></data>
+  <data name="UpdateUnableMessage" xml:space="preserve"><value>Не удалось связаться с GitHub. AudioFlow продолжает работать как обычно.</value></data>
+  <data name="UpdateDownloading" xml:space="preserve"><value>Загрузка обновления...</value></data>
+  <data name="UpdateFailed" xml:space="preserve"><value>Не удалось обновить</value></data>
+  <data name="UpdateNoInstaller" xml:space="preserve"><value>В выпуске не найден установочный файл.</value></data>
+  <data name="UpdateNoUpdater" xml:space="preserve"><value>Рядом с приложением не найден модуль обновления.</value></data>
+  <data name="UpdatesNote" xml:space="preserve"><value>AudioFlow обращается к GitHub только для проверки обновлений. Он никогда не отправляет звук, данные приложений, устройств или личную информацию.</value></data>
+  <data name="SessionActive" xml:space="preserve"><value>Активен</value></data>
+  <data name="SessionInactive" xml:space="preserve"><value>Неактивен</value></data>
+  <data name="SessionStale" xml:space="preserve"><value>Устаревший сеанс</value></data>
+  <data name="SessionRecovered" xml:space="preserve"><value>Восстановлен</value></data>
+  <data name="SessionLabel" xml:space="preserve"><value>Сеанс AudioFlow</value></data>
+  <data name="RoutingModeLabel" xml:space="preserve"><value>Режим маршрутизации</value></data>
+  <data name="RoutingModeTemporary" xml:space="preserve"><value>Временный сеанс</value></data>
+  <data name="SafetyLabel" xml:space="preserve"><value>Защита сеанса</value></data>
+  <data name="SafetyHint" xml:space="preserve"><value>Звук Windows вернётся в норму при закрытии AudioFlow.</value></data>
+  <data name="BtnEmergencyReset" xml:space="preserve"><value>Аварийный сброс</value></data>
+  <data name="EmergencyResetDone" xml:space="preserve"><value>Звук Windows восстановлен</value></data>
+  <data name="EmergencyResetIncomplete" xml:space="preserve"><value>Восстановление неполное; некоторые приложения не были запущены</value></data>
+  <data name="RoutingAppliedTemporary" xml:space="preserve"><value>Маршрутизация применена к {0} сеанс(ам) ({1} не удалось). Звук Windows будет восстановлен при закрытии AudioFlow.</value></data>
+  <data name="SettingsSafety" xml:space="preserve"><value>Сеанс и безопасность</value></data>
+  <data name="CloseCompletely" xml:space="preserve"><value>Полностью закрывать AudioFlow при закрытии окна (иначе сворачивается в трей)</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Открыть AudioFlow</value></data>
+  <data name="TrayStopRouting" xml:space="preserve"><value>Остановить маршрутизацию</value></data>
+  <data name="TrayDiagnostics" xml:space="preserve"><value>Диагностика</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Выйти из AudioFlow</value></data>
+  <data name="GuardianRunning" xml:space="preserve"><value>Активен</value></data>
+  <data name="GuardianNotRunning" xml:space="preserve"><value>Не запущен</value></data>
+  <data name="RecoveryLabel" xml:space="preserve"><value>Восстановление</value></data>
+  <data name="RoutingBackendLabel" xml:space="preserve"><value>Сервер маршрутизации</value></data>
+  <data name="VirtualEndpointLabel" xml:space="preserve"><value>Виртуальная конечная точка</value></data>
+  <data name="VirtualNotAvailable" xml:space="preserve"><value>Недоступно</value></data>
+  <data name="RoutingEngineNote" xml:space="preserve"><value>Маршрутизация по политике применяется при перезапуске потока. Живая маршрутизация без дублирования требует виртуальной аудиоконечной точки.</value></data>
+</root>
