@@ -83,6 +83,7 @@
   <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
   <data name="LanguageSpanish" xml:space="preserve"><value>Español</value></data>
   <data name="LanguageFrench" xml:space="preserve"><value>Français</value></data>
+  <data name="LanguageGerman" xml:space="preserve"><value>Deutsch</value></data>
   <data name="LanguageTurkish" xml:space="preserve"><value>Türkçe</value></data>
   <data name="About" xml:space="preserve"><value>Hakkında</value></data>
   <data name="AboutText" xml:space="preserve"><value>AudioFlow - Windows için uygulama bazlı ses yönlendirme.</value></data>

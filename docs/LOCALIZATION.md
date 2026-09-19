@@ -1,6 +1,6 @@
 # Localization
 
-AudioFlow ships with **English (default)**, **Spanish**, **Turkish** and **French**.
+AudioFlow ships with **English (default)**, **Spanish**, **Turkish**, **French** and **German**.
 
 ## Resources
 
@@ -10,6 +10,7 @@ AudioFlow ships with **English (default)**, **Spanish**, **Turkish** and **Frenc
 | `src/AudioFlow.UI/Resources/Strings.es.resx` | Spanish |
 | `src/AudioFlow.UI/Resources/Strings.tr.resx` | Turkish |
 | `src/AudioFlow.UI/Resources/Strings.fr.resx` | French |
+| `src/AudioFlow.UI/Resources/Strings.de.resx` | German |
 
 Resource base name: `AudioFlow.UI.Resources.Strings`.
 

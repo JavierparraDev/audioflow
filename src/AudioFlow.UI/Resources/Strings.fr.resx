@@ -82,6 +82,7 @@
   <data name="Language" xml:space="preserve"><value>Langue</value></data>
   <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
   <data name="LanguageSpanish" xml:space="preserve"><value>Español</value></data>
+  <data name="LanguageGerman" xml:space="preserve"><value>Deutsch</value></data>
   <data name="LanguageTurkish" xml:space="preserve"><value>Türkçe</value></data>
   <data name="LanguageFrench" xml:space="preserve"><value>French</value></data>
   <data name="About" xml:space="preserve"><value>À propos</value></data>
