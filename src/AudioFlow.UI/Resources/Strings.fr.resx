@@ -85,6 +85,7 @@
   <data name="LanguageGerman" xml:space="preserve"><value>Deutsch</value></data>
   <data name="LanguagePortuguese" xml:space="preserve"><value>Português (Brasil)</value></data>
   <data name="LanguageItalian" xml:space="preserve"><value>Italiano</value></data>
+  <data name="LanguageJapanese" xml:space="preserve"><value>日本語</value></data>
   <data name="LanguageTurkish" xml:space="preserve"><value>Türkçe</value></data>
   <data name="LanguageFrench" xml:space="preserve"><value>French</value></data>
   <data name="About" xml:space="preserve"><value>À propos</value></data>
