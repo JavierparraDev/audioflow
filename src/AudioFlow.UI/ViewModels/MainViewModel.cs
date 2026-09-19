@@ -58,7 +58,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             new() { Code = "tr", Label = Loc.Get("LanguageTurkish") },
             new() { Code = "fr", Label = Loc.Get("LanguageFrench") },
             new() { Code = "de", Label = Loc.Get("LanguageGerman") },
-            new() { Code = "pt-BR", Label = Loc.Get("LanguagePortuguese") }
+            new() { Code = "pt-BR", Label = Loc.Get("LanguagePortuguese") },
+            new() { Code = "it", Label = Loc.Get("LanguageItalian") }
         };
         _selectedLanguage = Languages[0];
 
