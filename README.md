@@ -52,7 +52,7 @@ back to its normal behavior and nothing is left behind.
 | 🎯 **Stable identity** | Executable name + path hash + AUMID for Store apps. |
 | 🧩 **Per-app rules** | Application rules plus a global default output. |
 | 🔒 **Audio Lock** | Partial protection to keep non-authorized apps off a device. |
-| 🌍 **Localized UI** | Modern dark WPF interface in **English and Spanish**. |
+| 🌍 **Localized UI** | Modern dark WPF interface localized into **nine languages**. |
 | ✅ **Verification** | Objective routing checks that measure the real level per endpoint. |
 | 🧪 **Process Loopback** | Experimental module on the official Windows API, isolated from the MVP. |
 
@@ -259,8 +259,8 @@ See [docs/TESTING.md](docs/TESTING.md) and [docs/TEST-REPORT.md](docs/TEST-REPOR
    [issue](https://github.com/JavierparraDev/audioflow/issues) with your Windows
    build, devices and steps to reproduce.
 
-Please keep UI text localized (add keys to both `Strings.resx` and
-`Strings.es.resx`) and add tests for behavior changes. Read
+Please keep UI text localized (add keys to `Strings.resx` and every translated
+`Strings.<culture>.resx`) and add tests for behavior changes. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide. By participating you agree
 to our [Code of Conduct](CODE_OF_CONDUCT.md); report vulnerabilities privately
 following [SECURITY.md](SECURITY.md).

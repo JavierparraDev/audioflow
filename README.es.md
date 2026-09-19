@@ -52,7 +52,7 @@ vuelve a su comportamiento normal y no queda nada atrás.
 | 🎯 **Identidad estable** | Nombre del ejecutable + hash de ruta + AUMID para apps de la Store. |
 | 🧩 **Reglas por app** | Reglas por aplicación y una salida predeterminada global. |
 | 🔒 **Bloqueo de audio** | Protección parcial para evitar que apps no autorizadas usen un dispositivo. |
-| 🌍 **UI localizada** | Interfaz WPF oscura y moderna en **inglés y español**. |
+| 🌍 **UI localizada** | Interfaz WPF oscura y moderna localizada en **nueve idiomas**. |
 | ✅ **Verificación** | Comprobación objetiva del routing que mide el nivel real por endpoint. |
 | 🧪 **Process Loopback** | Módulo experimental sobre la API oficial de Windows, aislado del MVP. |
 
@@ -260,8 +260,8 @@ Ver [docs/TESTING.md](docs/TESTING.md) y [docs/TEST-REPORT.md](docs/TEST-REPORT.
    [issue](https://github.com/JavierparraDev/audioflow/issues) con tu build de
    Windows, dispositivos y pasos para reproducirlo.
 
-Mantén los textos de UI localizados (agrega claves en `Strings.resx` y
-`Strings.es.resx`) y añade tests para los cambios. Lee
+Mantén los textos de UI localizados (agrega claves en `Strings.resx` y en cada
+`Strings.<culture>.resx` traducido) y añade tests para los cambios. Lee
 [CONTRIBUTING.md](CONTRIBUTING.md) para la guía completa. Al participar aceptas
 nuestro [Código de Conducta](CODE_OF_CONDUCT.md); reporta vulnerabilidades de
 forma privada siguiendo [SECURITY.md](SECURITY.md).

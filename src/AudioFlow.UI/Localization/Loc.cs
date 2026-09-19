@@ -4,8 +4,9 @@ using System.Resources;
 namespace AudioFlow.UI.Localization;
 
 /// <summary>
-/// Runtime localization accessor. Default language is English; Spanish is
-/// available. UI text is never hardcoded: everything goes through <see cref="Get"/>.
+/// Runtime localization accessor. Default language is English; the UI ships
+/// with several translations (see docs/LOCALIZATION.md). UI text is never
+/// hardcoded: everything goes through <see cref="Get"/>.
 /// </summary>
 public static class Loc
 {

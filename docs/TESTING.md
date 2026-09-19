@@ -21,6 +21,10 @@ Coverage:
   corrupt recovery, atomic save (no temp left), directory creation.
 - **ApplicationIdentifier** - same executable across PIDs, different executables,
   path hash stability, unknown application, case-insensitive names, Win32 kind.
+- **SettingsStore / ConfigMigrator** - missing, empty and invalid files, save/load
+  round-trip, atomic save, legacy `configVersion` migration.
+- **Updates** - version parsing/comparison, checksum verification, update check
+  states and GitHub release selection (with a stubbed HTTP handler).
 
 ## Windows integration tests (Windows only)
 
