@@ -1,58 +1,61 @@
 # Security Policy
 
+AudioFlow is a Windows desktop application that interacts with the Windows audio
+stack through COM interop, modifies per-application audio settings while it runs,
+and ships an installer plus a self-updater. We take reports about these areas
+seriously.
+
 ## Supported versions
 
-AudioFlow is in **beta**. Security fixes are applied to the latest release and
-to `main`.
+Only the latest published release receives security fixes.
 
 | Version | Supported |
-|---|---|
-| 0.2.x (latest beta) | :white_check_mark: |
-| < 0.2 | :x: |
+| ------- | --------- |
+| Latest release | :white_check_mark: |
+| Older releases | :x: |
 
 ## Reporting a vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+**Please do not open a public issue for security problems.**
 
-Instead, use GitHub's private vulnerability reporting:
+Use GitHub's private vulnerability reporting:
 
-1. Go to the [Security tab](https://github.com/JavierparraDev/audioflow/security).
+1. Go to the **Security** tab of this repository.
 2. Click **Report a vulnerability**.
-3. Describe the issue, the impact, and the steps to reproduce it.
+3. Describe the issue, the affected version, your Windows build, and a minimal
+   reproduction if possible.
 
-You can expect an acknowledgement within a few days. We will keep you informed
-of the progress and credit you in the fix unless you prefer to remain anonymous.
+If the private report form is not available to you, contact the maintainer
+directly through their GitHub profile and ask for a private channel. Do not
+include exploit details in a public issue or discussion.
+
+## What to expect
+
+- Acknowledgement of your report within a few days.
+- An assessment and, when confirmed, a fix and coordinated disclosure.
+- Credit in the release notes if you want it.
 
 ## Scope
 
-AudioFlow runs with the privileges of the current user and touches sensitive
-areas of Windows:
+In scope:
 
-- **COM interop** with `IAudioPolicyConfigFactory` and `IPolicyConfig`
-  (`AudioFlow.Core/WindowsAudio`).
-- **Registry writes** under
-  `HKCU\...\LowRegistry\Audio\PolicyConfig\PropertyStore` and the legacy
-  `HKCU\...\CurrentVersion\Run` key.
-- **Process inspection** to identify applications producing audio.
-- **Network access** only to the GitHub Releases API for update checks.
+- The installer and the standalone updater (integrity/verification bypass,
+  unsafe extraction, path handling).
+- COM interop and registry snapshot/restore logic in `AudioFlow.Core`.
+- Anything that lets a local process escalate privileges or persist changes
+  after AudioFlow exits.
 
-Issues that are especially interesting to us:
+Out of scope:
 
-- Elevation of privilege or arbitrary code execution.
-- Writing to registry keys or files outside the documented locations.
-- Path or executable-name spoofing that makes AudioFlow act on the wrong process.
-- Tampering with the updater (checksum/signature bypass).
-- Any data exfiltration.
+- Issues that require an already-compromised machine or administrator rights.
+- Bugs in third-party dependencies (please report those upstream, though we
+  welcome a heads-up).
+- Missing hardening that does not have a concrete security impact.
 
-## Out of scope
+## Project security posture
 
-- Windows itself, NAudio, or third-party drivers and virtual audio cables.
-- The documented [limitations](docs/LIMITATIONS.md): partial routing, Audio Lock
-  being bypassable, exclusive-mode apps, and the experimental Process Loopback.
-- The absence of code signing on beta builds (tracked on the roadmap).
-
-## Safe harbour
-
-We will not pursue legal action against researchers who report issues in good
-faith, avoid privacy violations and service disruption, and give us reasonable
-time to fix the issue before public disclosure.
+- No telemetry: the only network call is the update check against GitHub
+  Releases.
+- Session-only by design: AudioFlow restores the per-application audio registry
+  on exit and leaves no rules, logs or registry changes behind.
+- Release artifacts are built in CI and published with SHA-256 checksums.
